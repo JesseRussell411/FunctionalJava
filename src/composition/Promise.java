@@ -1,6 +1,5 @@
 package composition;
 
-
 import errors.CancellationReason;
 
 import java.util.Collection;
@@ -36,9 +35,12 @@ public class Promise<T> {
         return consolidated;
     }
 
-    public static <T> New<T> pending() {
+    public record Deferred<T>(Promise<T> promise, Promise<T>.Settle settle) {
+    }
+
+    public static <T> Deferred<T> pending() {
         final var promise = new Promise<T>();
-        return new New<>(promise, promise.new Settle());
+        return new Deferred<>(promise, promise.new Settle());
     }
 
     public static <T> Promise<T> resolved(T result) {
@@ -184,9 +186,6 @@ public class Promise<T> {
         PENDING
     }
 
-    public record New<T>(Promise<T> promise, Promise<T>.Settle settle) {
-    }
-
 
     // reaction //
     private final Collection<Reaction<T, ?>> reactions = new ConcurrentLinkedDeque<>();
@@ -211,7 +210,7 @@ public class Promise<T> {
 
     private boolean settleAllReactions() {
         if (reactions.isEmpty()) return false;
-        
+
         reactionsLock.writeLock().lock();
         try {
             switch (state) {
