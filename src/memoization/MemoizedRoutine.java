@@ -4,25 +4,30 @@ import java.util.Objects;
 import java.util.function.Function;
 
 public class MemoizedRoutine<T, R> implements Function<T, R> {
-    private final MemoizedFunction<Dependencies, R> func;
+    private final MemoizedFunction<Arguments<T>, R> func;
 
     public MemoizedRoutine(Function<T, R> original) {
         Objects.requireNonNull(original);
 
+
         func = new MemoizedFunction<>(
-                (dependencies) -> original.apply((T) dependencies.items[0]));
+                (arguments) -> original.apply(arguments.t));
+    }
+
+    public R hardApply(T t) {
+        return func.hardApply(new Arguments<>(t, Dependencies.EMPTY));
     }
 
     public R apply(T t) {
-        return func.apply(new Dependencies(new Object[]{t}));
+        return func.apply(new Arguments<>(t, Dependencies.EMPTY));
     }
 
     public R apply(T t, Object[] dependencies) {
         Objects.requireNonNull(dependencies);
 
-        final var allDeps = new Object[dependencies.length + 1];
-        allDeps[0] = t;
-        System.arraycopy(dependencies, 0, allDeps, 1, dependencies.length);
-        return func.apply(new Dependencies(allDeps));
+        return func.apply(new Arguments<>(t, new Dependencies(dependencies)));
+    }
+
+    private record Arguments<T>(T t, Dependencies dependencies) {
     }
 }

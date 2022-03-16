@@ -17,4 +17,8 @@ public class MemoizedSupplier<T> implements Supplier<T>, Function<Object[], T> {
     public T get() {
         return func.apply(Dependencies.EMPTY);
     }
+
+    public T hardGet() {
+        return func.hardApply(Dependencies.EMPTY);
+    }
 }

@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 
 public class MemoizedFunction<T, R> implements Function<T, R> {
     private final Function<T, R> original;
-    private final Map<T, Supplier<R>> cache = newCache();
+    private final Map<T, Supplier<R>> cache = Objects.requireNonNull(newCache());
 
     protected Map<T, Supplier<R>> newCache() {
         return new ConcurrentHashMap<>();
@@ -19,23 +19,27 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
         this.original = original;
     }
 
-    public R apply(T arg) {
+    public R hardApply(T t) {
+        return original.apply(t);
+    }
+
+    public R apply(T t) {
         // Check the cache.
-        var fromCache = cache.get(arg);
+        var fromCache = cache.get(t);
         if (fromCache != null) return fromCache.get();
 
         synchronized (this) {
             // Check the cache again. It could have changed in the time it took to synchronize.
-            fromCache = cache.get(arg);
+            fromCache = cache.get(t);
             if (fromCache != null) return fromCache.get();
 
             // Cache miss, calculate value for real.
             try {
-                final var result = original.apply(arg);
-                cache.put(arg, () -> result);
+                final var result = original.apply(t);
+                cache.put(t, () -> result);
                 return result;
             } catch (RuntimeException e) {
-                cache.put(arg, () -> {
+                cache.put(t, () -> {
                     throw e;
                 });
                 throw e;

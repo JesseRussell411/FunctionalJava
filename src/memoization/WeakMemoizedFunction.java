@@ -12,6 +12,6 @@ public class WeakMemoizedFunction<T, R> extends MemoizedFunction<T, R> {
 
     @Override
     protected Map<T, Supplier<R>> newCache() {
-        return new WeakHashMap<>();
+        return new ReadWriteLockedHashMap<>(new WeakHashMap<>());
     }
 }

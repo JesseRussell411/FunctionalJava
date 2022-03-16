@@ -1,3 +1,4 @@
+import composition.Promise;
 import memoization.MemoizedBiRoutine;
 import memoization.MemoizedFunction;
 
@@ -84,20 +85,39 @@ public class Main {
     public static void main(String[] args) {
         try (final var input = new Scanner(System.in)) {
             while (true) {
-                try {
-                    System.out.print("Enter Number: ");
-                    final var num = input.nextInt();
+                final var promise = Promise.<Integer>pending();
+                promise.promise().then(n -> {
+                    System.out.println("You entered " + n);
+                    return n;
+                }).then((n) -> {
+                    System.out.println("The fibonacci number at " + n + " is " + memoFibFact(n, n).fib);
+                    return n;
+                }).then((n) -> {
+                    System.out.println("The factorial of " + n + " is " + memoFibFact(n, n).fact);
+                    return n;
+                });
 
-                    final var fibAndFact = memoFibFact(num, num);
+                promise.promise().then(n -> {
+                    System.out.println("Again, the number you entered is " + n);
+                    System.out.println("Now I'll throw an error with the code " + n);
+                    throw new RuntimeException(String.valueOf(n));
+                }).onError(error -> {
+                    System.out.println("Caught the error " + error.getMessage());
+                    return error.getMessage();
+                }).then(message -> {
+                    System.out.println("Again, that error's message was " + message);
+                    System.out.println("Now, I'll NOT throw an error.");
+                    return message;
+                }).onError(e -> {
+                    System.out.println("This text won't print");
+                    return e;
+                }).onCancel(reason -> {
+                    System.out.println("The error handling code was canceled because " + reason.getMessage());
+                    return reason;
+                });
 
-                    System.out.println("Fibonacci number: " + fibAndFact.fib);
-                    System.out.println("Factorial: " + fibAndFact.fact);
-                    System.out.println();
-                } catch (RuntimeException e) {
-                    System.err.println(e);
-                } catch (StackOverflowError e) {
-                    System.err.println(e);
-                }
+                System.out.print("Enter Number: ");
+                promise.settle().resolve(input.nextInt());
             }
         }
     }
