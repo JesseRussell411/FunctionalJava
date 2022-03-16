@@ -3,7 +3,8 @@ package composition;
 import errors.CancellationReason;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.Objects;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
@@ -22,17 +23,25 @@ public class Promise<T> {
     }
 
     public static <T> Promise<T> consolidate(Promise<Promise<T>> first) {
-        final var consolidated = new Promise<T>();
+        if (first == null) return null;
+        final var deferred = new Promise<T>();
 
         first.then(
-                (promise) -> promise.then(
-                        (result) -> consolidated.settle().resolve(result),
-                        (error) -> consolidated.settle().reject(error),
-                        (reason) -> consolidated.settle().cancel(reason)),
-                (error) -> consolidated.settle().reject(error),
-                (reason) -> consolidated.settle().cancel(reason));
+                (promise) -> {
+                    if (promise == null) {
+                        deferred.settle().resolve(null);
+                    } else {
+                        promise.then(
+                                (result) -> deferred.settle().resolve(result),
+                                (error) -> deferred.settle().reject(error),
+                                (reason) -> deferred.settle().cancel(reason));
+                    }
+                    return null;
+                },
+                (error) -> deferred.settle().reject(error),
+                (reason) -> deferred.settle().cancel(reason));
 
-        return consolidated;
+        return deferred;
     }
 
     public record Deferred<T>(Promise<T> promise, Promise<T>.Settle settle) {
@@ -59,6 +68,50 @@ public class Promise<T> {
         final var promise = new Promise<T>();
         promise.new Settle().cancel(reason);
         return promise;
+    }
+
+    public static <T> Promise<T> fromCompletableFuture(CompletableFuture<T> future) {
+        if (future == null) return null;
+
+        final var deferred = Promise.<T>pending();
+
+        future.thenAccept(deferred.settle::resolve);
+        future.exceptionally(error -> {
+            deferred.settle.reject(error);
+            return null;
+        });
+
+        return deferred.promise;
+    }
+
+    public CompletableFuture<T> toCompletableFuture() {
+        final var future = new CompletableFuture<T>();
+        then(
+                future::complete,
+                future::completeExceptionally,
+                reason -> future.completeExceptionally(new CancellationException(reason.getMessage())));
+
+        return future;
+    }
+
+    public T join() throws InterruptedException, ExecutionException, CancellationException {
+        final var lock = new Object();
+
+        onSettle(() -> {
+            lock.notifyAll();
+            return null;
+        });
+
+        synchronized (lock) {
+            while (isPending()) lock.wait();
+        }
+
+        return switch (state) {
+            case RESOLVED -> getResult();
+            case REJECTED -> throw new ExecutionException(getError());
+            case CANCELED -> throw new CancellationException(getCancelationReason().getMessage());
+            default -> throw new IllegalStateException();
+        };
     }
 
     public State getState() {
