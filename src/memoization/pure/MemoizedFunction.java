@@ -19,10 +19,6 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
         this.original = original;
     }
 
-    public R hardApply(T t) {
-        return original.apply(t);
-    }
-
     public R apply(T t) {
         // Check the cache.
         var fromCache = cache.get(t);
@@ -45,5 +41,9 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
                 throw e;
             }
         }
+    }
+
+    public R hardApply(T t) {
+        return original.apply(t);
     }
 }
