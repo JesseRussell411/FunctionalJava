@@ -1,4 +1,7 @@
-package memoization;
+package memoization.impure;
+
+import collections.ObjectTuple;
+import memoization.pure.MemoizedFunction;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -15,19 +18,19 @@ public class MemoizedRoutine<T, R> implements Function<T, R> {
     }
 
     public R hardApply(T t) {
-        return func.hardApply(new Arguments<>(t, Dependencies.EMPTY));
+        return func.hardApply(new Arguments<>(t, ObjectTuple.EMPTY));
     }
 
     public R apply(T t) {
-        return func.apply(new Arguments<>(t, Dependencies.EMPTY));
+        return func.apply(new Arguments<>(t, ObjectTuple.EMPTY));
     }
 
     public R apply(T t, Object[] dependencies) {
         Objects.requireNonNull(dependencies);
 
-        return func.apply(new Arguments<>(t, new Dependencies(dependencies)));
+        return func.apply(new Arguments<>(t, new ObjectTuple(dependencies)));
     }
 
-    private record Arguments<T>(T t, Dependencies dependencies) {
+    private record Arguments<T>(T t, ObjectTuple objectTuple) {
     }
 }

@@ -1,6 +1,6 @@
 import composition.Promise;
-import memoization.MemoizedBiRoutine;
-import memoization.MemoizedFunction;
+import memoization.impure.MemoizedBiRoutine;
+import memoization.pure.MemoizedFunction;
 
 import java.util.Scanner;
 import java.util.function.BiFunction;
@@ -85,8 +85,9 @@ public class Main {
     public static void main(String[] args) {
         try (final var input = new Scanner(System.in)) {
             while (true) {
-                final var promise = Promise.<Integer>pending();
-                promise.promise().then(n -> {
+                final var deferred = Promise.<Integer>pending();
+
+                deferred.promise().then(n -> {
                     System.out.println("You entered " + n);
                     return n;
                 }).then((n) -> {
@@ -97,7 +98,7 @@ public class Main {
                     return n;
                 });
 
-                promise.promise().then(n -> {
+                deferred.promise().then(n -> {
                     System.out.println("Again, the number you entered is " + n);
                     System.out.println("Now I'll throw an error with the code " + n);
                     throw new RuntimeException(String.valueOf(n));
@@ -117,7 +118,7 @@ public class Main {
                 });
 
                 System.out.print("Enter Number: ");
-                promise.settle().resolve(input.nextInt());
+                deferred.settle().resolve(input.nextInt());
             }
         }
     }

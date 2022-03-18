@@ -1,4 +1,4 @@
-package memoization;
+package collections;
 
 import java.util.Collection;
 import java.util.Map;
@@ -6,11 +6,11 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class ReadWriteLockedHashMap<K, V> implements Map<K, V> {
+public class ReadWriteLockedMap<K, V> implements Map<K, V> {
     private final Map<K, V> entries;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public ReadWriteLockedHashMap(Map<K, V> original) {
+    public ReadWriteLockedMap(Map<K, V> original) {
         entries = original;
     }
 

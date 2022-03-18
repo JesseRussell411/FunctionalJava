@@ -3,8 +3,10 @@ package composition;
 import errors.CancellationReason;
 
 import java.util.Collection;
-import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
@@ -24,32 +26,41 @@ public class Promise<T> {
 
     public static <T> Promise<T> consolidate(Promise<Promise<T>> first) {
         if (first == null) return null;
-        final var deferred = new Promise<T>();
+        final var next = new Promise<T>();
 
         first.then(
                 (promise) -> {
                     if (promise == null) {
-                        deferred.settle().resolve(null);
+                        next.settle().resolve(null);
                     } else {
                         promise.then(
-                                (result) -> deferred.settle().resolve(result),
-                                (error) -> deferred.settle().reject(error),
-                                (reason) -> deferred.settle().cancel(reason));
+                                (result) -> next.settle().resolve(result),
+                                (error) -> next.settle().reject(error),
+                                (reason) -> next.settle().cancel(reason));
                     }
                     return null;
                 },
-                (error) -> deferred.settle().reject(error),
-                (reason) -> deferred.settle().cancel(reason));
+                (error) -> next.settle().reject(error),
+                (reason) -> next.settle().cancel(reason));
+
+        return next;
+    }
+
+    public Deferred defer() {
+        return defer(Promise.pending());
+    }
+
+    public Deferred defer(Promise<T>.Deferred deferred) {
+        then(
+                result -> deferred.settle().resolve(result),
+                error -> deferred.settle().reject(error),
+                reason -> deferred.settle().cancel(reason));
 
         return deferred;
     }
 
-    public record Deferred<T>(Promise<T> promise, Promise<T>.Settle settle) {
-    }
-
-    public static <T> Deferred<T> pending() {
-        final var promise = new Promise<T>();
-        return new Deferred<>(promise, promise.new Settle());
+    public static <T> Promise<T>.Deferred pending() {
+        return new Promise<T>().new Deferred();
     }
 
     public static <T> Promise<T> resolved(T result) {
@@ -75,13 +86,13 @@ public class Promise<T> {
 
         final var deferred = Promise.<T>pending();
 
-        future.thenAccept(deferred.settle::resolve);
+        future.thenAccept(deferred.settle()::resolve);
         future.exceptionally(error -> {
-            deferred.settle.reject(error);
+            deferred.settle().reject(error);
             return null;
         });
 
-        return deferred.promise;
+        return deferred.promise();
     }
 
     public CompletableFuture<T> toCompletableFuture() {
@@ -239,6 +250,18 @@ public class Promise<T> {
         PENDING
     }
 
+    public class Deferred {
+        private Deferred() {
+        }
+
+        public Promise<T> promise() {
+            return Promise.this;
+        }
+
+        public Promise<T>.Settle settle() {
+            return new Settle();
+        }
+    }
 
     // reaction //
     private final Collection<Reaction<T, ?>> reactions = new ConcurrentLinkedDeque<>();

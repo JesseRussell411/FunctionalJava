@@ -1,4 +1,4 @@
-package memoization;
+package memoization.pure;
 
 import java.util.function.BiFunction;
 

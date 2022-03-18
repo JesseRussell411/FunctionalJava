@@ -1,4 +1,7 @@
-package memoization;
+package memoization.impure;
+
+import collections.ObjectTuple;
+import memoization.pure.MemoizedFunction;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -14,19 +17,19 @@ public class MemoizedBiRoutine<T, U, R> implements BiFunction<T, U, R> {
     }
 
     public R hardApply(T t, U u) {
-        return func.hardApply(new Arguments<>(t, u, Dependencies.EMPTY));
+        return func.hardApply(new Arguments<>(t, u, ObjectTuple.EMPTY));
     }
 
     public R apply(T t, U u) {
-        return func.apply(new Arguments<>(t, u, Dependencies.EMPTY));
+        return func.apply(new Arguments<>(t, u, ObjectTuple.EMPTY));
     }
 
     public R apply(T t, U u, Object[] dependencies) {
         Objects.requireNonNull(dependencies);
 
-        return func.apply(new Arguments<>(t, u, new Dependencies(dependencies)));
+        return func.apply(new Arguments<>(t, u, new ObjectTuple(dependencies)));
     }
 
-    private record Arguments<T, U>(T t, U u, Dependencies dependencies) {
+    private record Arguments<T, U>(T t, U u, ObjectTuple objectTuple) {
     }
 }

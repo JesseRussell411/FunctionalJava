@@ -1,4 +1,6 @@
-package memoization;
+package memoization.pure;
+
+import collections.ReadWriteLockedMap;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -11,7 +13,7 @@ public class WeakMemoizedFunction<T, R> extends MemoizedFunction<T, R> {
     }
 
     @Override
-    protected Map<T, Supplier<R>> newCache() {
-        return new ReadWriteLockedHashMap<>(new WeakHashMap<>());
+    protected Map<T, Supplier<R>> initCache() {
+        return new ReadWriteLockedMap<>(new WeakHashMap<>());
     }
 }

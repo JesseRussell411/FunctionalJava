@@ -1,4 +1,4 @@
-package memoization;
+package memoization.pure;
 
 import java.util.Map;
 import java.util.Objects;
@@ -8,9 +8,9 @@ import java.util.function.Supplier;
 
 public class MemoizedFunction<T, R> implements Function<T, R> {
     private final Function<T, R> original;
-    private final Map<T, Supplier<R>> cache = Objects.requireNonNull(newCache());
+    private final Map<T, Supplier<R>> cache = Objects.requireNonNull(initCache());
 
-    protected Map<T, Supplier<R>> newCache() {
+    protected Map<T, Supplier<R>> initCache() {
         return new ConcurrentHashMap<>();
     }
 
