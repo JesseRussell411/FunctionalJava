@@ -20,8 +20,31 @@ public class Promise<T> {
     private Promise() {
     }
 
-    public Promise(Consumer<Settle> init) {
-        init.accept(new Settle());
+    public Promise(Consumer<Settle> initializer) {
+        initializer.accept(new Settle());
+    }
+
+    public Promise<Object> flatten() {
+        final var result = new Promise<>();
+        flatten((Promise<Object>) this, result.new Settle());
+        return result;
+    }
+
+    private static void flatten(Promise<Object> current, Promise<Object>.Settle settle) {
+        current.then(result -> {
+            if (result instanceof Promise<?> p) {
+                flatten((Promise<Object>) p, settle);
+            } else {
+                settle.resolve(result);
+            }
+            return null;
+        }, error -> {
+            settle.reject(error);
+            return null;
+        }, reason -> {
+            settle.cancel(reason);
+            return null;
+        });
     }
 
     public static <T> Promise<T> consolidate(Promise<Promise<T>> first) {
@@ -311,6 +334,10 @@ public class Promise<T> {
 
         reactions.clear();
         return true;
+    }
+
+    public <R> Promise<R> asyncThen(Function<T, Promise<R>> ifResolved, Function<Throwable, Promise<R>> ifRejected, Function<CancellationReason, Promise<R>> ifCanceled) {
+        return Promise.consolidate(then(ifResolved, ifRejected, ifCanceled));
     }
 
     public <R> Promise<R> then(Function<T, R> ifResolved, Function<Throwable, R> ifRejected, Function<CancellationReason, R> ifCanceled) {
