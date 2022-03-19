@@ -1,7 +1,6 @@
 package composition;
 
 import errors.CancellationReason;
-import references.Init;
 
 import java.util.Collection;
 import java.util.concurrent.CancellationException;
@@ -15,8 +14,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Promise<T> {
-    private final Init<State> state = new Init<>(State.PENDING);
-    private final Init<Object> value = new Init<>();
+    private volatile State state = State.PENDING;
+    private volatile Object value = null;
 
     private Promise() {
     }
@@ -118,7 +117,7 @@ public class Promise<T> {
             while (isPending()) lock.wait();
         }
 
-        return switch (state.get()) {
+        return switch (state) {
             case RESOLVED -> getResult();
             case REJECTED -> throw new ExecutionException(getError());
             case CANCELED -> throw new CancellationException(getCancelationReason().getMessage());
@@ -127,23 +126,23 @@ public class Promise<T> {
     }
 
     public State getState() {
-        return state.get();
+        return state;
     }
 
     public boolean isRejected() {
-        return state.get() == State.REJECTED;
+        return state == State.REJECTED;
     }
 
     public boolean isResolved() {
-        return state.get() == State.RESOLVED;
+        return state == State.RESOLVED;
     }
 
     public boolean isCanceled() {
-        return state.get() == State.CANCELED;
+        return state == State.CANCELED;
     }
 
     public boolean isPending() {
-        return state.get() == State.PENDING;
+        return state == State.PENDING;
     }
 
     public boolean isSettled() {
@@ -152,19 +151,19 @@ public class Promise<T> {
 
     public T getResult() {
         if (isResolved()) {
-            return (T) value.get();
+            return (T) value;
         } else return null;
     }
 
     public Throwable getError() {
         if (isRejected()) {
-            return (Throwable) value.get();
+            return (Throwable) value;
         } else return null;
     }
 
     public CancellationReason getCancelationReason() {
         if (isCanceled()) {
-            return (CancellationReason) value.get();
+            return (CancellationReason) value;
         } else return null;
     }
 
@@ -180,8 +179,8 @@ public class Promise<T> {
             if (isSettled()) return false;
             synchronized (Promise.this) {
                 if (isSettled()) return false;
-                Promise.this.value.set(result);
-                Promise.this.state.set(State.RESOLVED);
+                Promise.this.value = result;
+                Promise.this.state = State.RESOLVED;
                 settleAllReactions();
                 return true;
             }
@@ -192,8 +191,8 @@ public class Promise<T> {
             if (isSettled()) return false;
             synchronized (Promise.this) {
                 if (isSettled()) return false;
-                Promise.this.value.set(error);
-                Promise.this.state.set(State.REJECTED);
+                Promise.this.value = error;
+                Promise.this.state = State.REJECTED;
                 settleAllReactions();
                 return true;
             }
@@ -203,8 +202,8 @@ public class Promise<T> {
             if (isSettled()) return false;
             synchronized (Promise.this) {
                 if (isSettled()) return false;
-                Promise.this.value.set(reason);
-                Promise.this.state.set(State.CANCELED);
+                Promise.this.value = reason;
+                Promise.this.state = State.CANCELED;
                 settleAllReactions();
                 return true;
             }
@@ -214,8 +213,8 @@ public class Promise<T> {
             if (isSettled()) return false;
             synchronized (Promise.this) {
                 if (isSettled()) return false;
-                Promise.this.value.set(getResult.get());
-                Promise.this.state.set(State.RESOLVED);
+                Promise.this.value = getResult.get();
+                Promise.this.state = State.RESOLVED;
                 settleAllReactions();
                 return true;
             }
@@ -225,8 +224,8 @@ public class Promise<T> {
             if (isSettled()) return false;
             synchronized (Promise.this) {
                 if (isSettled()) return false;
-                Promise.this.value.set(getError.get());
-                Promise.this.state.set(State.REJECTED);
+                Promise.this.value = getError.get();
+                Promise.this.state = State.REJECTED;
                 settleAllReactions();
                 return true;
             }
@@ -236,8 +235,8 @@ public class Promise<T> {
             if (isSettled()) return false;
             synchronized (Promise.this) {
                 if (isSettled()) return false;
-                Promise.this.value.set(getReason.get());
-                Promise.this.state.set(State.CANCELED);
+                Promise.this.value = getReason.get();
+                Promise.this.state = State.CANCELED;
                 settleAllReactions();
                 return true;
             }
@@ -269,15 +268,15 @@ public class Promise<T> {
     private final ReadWriteLock reactionsLock = new ReentrantReadWriteLock();
 
     private boolean settleReaction(Reaction<T, ?> reaction) {
-        switch (state.get()) {
+        switch (state) {
             case RESOLVED:
-                reaction.resolve((T) value.get());
+                reaction.resolve((T) value);
                 break;
             case REJECTED:
-                reaction.reject((Throwable) value.get());
+                reaction.reject((Throwable) value);
                 break;
             case CANCELED:
-                reaction.cancel((CancellationReason) value.get());
+                reaction.cancel((CancellationReason) value);
                 break;
             default:
                 return false;
@@ -290,17 +289,17 @@ public class Promise<T> {
 
         reactionsLock.writeLock().lock();
         try {
-            switch (state.get()) {
+            switch (state) {
                 case RESOLVED:
-                    final var result = (T) value.get();
+                    final var result = (T) value;
                     for (final var reaction : reactions) reaction.resolve(result);
                     break;
                 case REJECTED:
-                    final var error = (Throwable) value.get();
+                    final var error = (Throwable) value;
                     for (final var reaction : reactions) reaction.reject(error);
                     break;
                 case CANCELED:
-                    final var reason = (CancellationReason) value.get();
+                    final var reason = (CancellationReason) value;
                     for (final var reaction : reactions) reaction.cancel(reason);
                     break;
                 default:

@@ -1,13 +1,11 @@
 package memoization.pure;
 
-import references.Init;
-
 import java.util.Objects;
 import java.util.function.Supplier;
 
 public class Lazy<T> implements Supplier<T> {
     private Supplier<T> original;
-    private final Init<Supplier<T>> cache = new Init<>();
+    private volatile Supplier<T> cache = null;
 
     public Lazy(Supplier<T> original) {
         Objects.requireNonNull(original);
@@ -16,23 +14,25 @@ public class Lazy<T> implements Supplier<T> {
     }
 
     public T get() {
-        if (cache.isSet()) return cache.get().get();
+        var cache = this.cache;
+        if (cache != null) return cache.get();
 
         synchronized (this) {
-            if (cache.isSet()) return cache.get().get();
+            cache = this.cache;
+            if (cache != null) return cache.get();
 
             try {
                 final var result = original.get();
-                cache.set(() -> result);
+                cache = () -> result;
             } catch (RuntimeException error) {
-                cache.set(() -> {
+                cache = () -> {
                     throw error;
-                });
+                };
             }
 
             original = null;
+            this.cache = cache;
         }
-
-        return cache.get().get();
+        return cache.get();
     }
 }

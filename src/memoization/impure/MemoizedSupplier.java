@@ -6,7 +6,7 @@ import memoization.pure.MemoizedFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class MemoizedSupplier<T> implements Function<Object[], T> {
+public class MemoizedSupplier<T> implements Supplier<T>, Function<Object[], T> {
     private final MemoizedFunction<ObjectTuple, T> func;
 
     public MemoizedSupplier(Supplier<T> original) {
@@ -15,6 +15,10 @@ public class MemoizedSupplier<T> implements Function<Object[], T> {
 
     public T apply(Object[] dependencies) {
         return func.apply(new ObjectTuple(dependencies));
+    }
+
+    public T get() {
+        return func.apply(ObjectTuple.EMPTY);
     }
 
     public T hardGet() {
