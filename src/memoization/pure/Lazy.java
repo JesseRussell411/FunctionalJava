@@ -5,34 +5,30 @@ import java.util.function.Supplier;
 
 public class Lazy<T> implements Supplier<T> {
     private Supplier<T> original;
-    private volatile Supplier<T> cache = null;
+    private final VolatileUntilSet<Supplier<T>> cache = new VolatileUntilSet<>();
 
     public Lazy(Supplier<T> original) {
-        Objects.requireNonNull(original);
-
-        this.original = original;
+        this.original = Objects.requireNonNull(original);
     }
 
     public T get() {
-        var cache = this.cache;
-        if (cache != null) return cache.get();
+        if (cache.isSet()) return cache.get().get();
 
         synchronized (this) {
-            cache = this.cache;
-            if (cache != null) return cache.get();
+            if (cache.isSet()) return cache.get().get();
 
             try {
                 final var result = original.get();
-                cache = () -> result;
+                cache.set(() -> result);
+                original = null;
+                return result;
             } catch (RuntimeException error) {
-                cache = () -> {
+                cache.set(() -> {
                     throw error;
-                };
+                });
+                original = null;
+                throw error;
             }
-
-            original = null;
-            this.cache = cache;
         }
-        return cache.get();
     }
 }
