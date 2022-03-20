@@ -1,5 +1,5 @@
 import composition.Promise;
-import memoization.impure.MemoizedBiRoutine;
+import memoization.pure.MemoizedBiFunction;
 import memoization.pure.MemoizedFunction;
 
 import java.util.Scanner;
@@ -32,7 +32,7 @@ public class Main {
         return memoFibFact.apply(n1, n2);
     }
 
-    public static final BiFunction<Integer, Integer, Fib_Fact> memoFibFact = new MemoizedBiRoutine<>((n1, n2) -> {
+    public static final BiFunction<Integer, Integer, Fib_Fact> memoFibFact = new MemoizedBiFunction<>((n1, n2) -> {
         if (n1 == 0 || n1 == 1) {
             if (n2 > 1) {
                 return new Fib_Fact(
@@ -83,9 +83,20 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        final var promiseChain = new Promise<>(
+                settle1 -> settle1.resolve(new Promise<>(
+                        settle2 -> settle2.resolve(new Promise<>(
+                                settle3 -> settle3.resolve(new Promise<>(settle4 -> settle4.resolve("hello world!!!!")))))))
+        );
+
+        promiseChain.flatten().then(s -> {
+            System.out.println(s);
+            return null;
+        });
+
         try (final var input = new Scanner(System.in)) {
             while (true) {
-                final var deferred = Promise.<Integer>pending();
+                final var deferred = Promise.<Integer>deferred();
 
                 deferred.promise().then(n -> {
                     System.out.println("You entered " + n);

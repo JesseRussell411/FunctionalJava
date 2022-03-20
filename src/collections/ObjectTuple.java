@@ -17,12 +17,11 @@ public class ObjectTuple implements Iterable<Object> {
     public ObjectTuple(Object[] items) {
         Objects.requireNonNull(items);
         this.items = Arrays.copyOf(items, items.length);
-        final Supplier<Integer> getHashCode = () -> Arrays.hashCode(items);
 
         if (this.items.length >= HASH_CACHE_THRESHOLD) {
-            this.getHashCode = new Lazy<>(getHashCode);
+            this.getHashCode = new Lazy<>(() -> Arrays.hashCode(items));
         } else {
-            this.getHashCode = getHashCode;
+            this.getHashCode = () -> Arrays.hashCode(items);
         }
     }
 

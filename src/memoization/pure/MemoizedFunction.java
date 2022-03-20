@@ -28,22 +28,17 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
         var fromCache = cache.get(t);
         if (fromCache != null) return fromCache.get();
 
-        synchronized (this) {
-            // Check the cache again. It could have changed in the time it took to synchronize.
-            fromCache = cache.get(t);
-            if (fromCache != null) return fromCache.get();
-
-            // Cache miss, calculate value for real.
-            try {
-                final var result = original.apply(t);
-                cache.put(t, () -> result);
-                return result;
-            } catch (RuntimeException e) {
-                cache.put(t, () -> {
-                    throw e;
-                });
+        // Cache miss, calculate value for real.
+        try {
+            final var result = original.apply(t);
+            cache.put(t, () -> result);
+            return result;
+        } catch (RuntimeException e) {
+            cache.put(t, () -> {
                 throw e;
-            }
+            });
+            throw e;
         }
+
     }
 }

@@ -24,9 +24,12 @@ public class Promise<T> {
         initializer.accept(new Settle());
     }
 
+    /**
+     * @return A promise which resolves to the final result of a promise chain (promise of a promise of a promise...).
+     */
     public Promise<Object> flatten() {
         final var result = new Promise<>();
-        flatten((Promise<Object>) this, result.new Settle());
+        flatten((Promise<Object>) this, result.settle());
         return result;
     }
 
@@ -47,11 +50,11 @@ public class Promise<T> {
         });
     }
 
-    public static <T> Promise<T> consolidate(Promise<Promise<T>> first) {
-        if (first == null) return null;
+    public static <T> Promise<T> consolidate(Promise<Promise<T>> chain) {
+        if (chain == null) return null;
         final var next = new Promise<T>();
 
-        first.then(
+        chain.then(
                 (promise) -> {
                     if (promise == null) {
                         next.settle().resolve(null);
@@ -70,20 +73,19 @@ public class Promise<T> {
     }
 
     public Deferred defer() {
-        return defer(Promise.pending());
-    }
+        final var deferred = Promise.<T>deferred();
 
-    public Deferred defer(Promise<T>.Deferred deferred) {
-        then(
-                result -> deferred.settle().resolve(result),
-                error -> deferred.settle().reject(error),
-                reason -> deferred.settle().cancel(reason));
+        deferred.shadow(this);
 
         return deferred;
     }
 
-    public static <T> Promise<T>.Deferred pending() {
+    public static <T> Promise<T>.Deferred deferred() {
         return new Promise<T>().new Deferred();
+    }
+
+    public static <T> Promise<T> pending() {
+        return new Promise<>();
     }
 
     public static <T> Promise<T> resolved(T result) {
@@ -107,7 +109,7 @@ public class Promise<T> {
     public static <T> Promise<T> fromCompletableFuture(CompletableFuture<T> future) {
         if (future == null) return null;
 
-        final var deferred = Promise.<T>pending();
+        final var deferred = Promise.<T>deferred();
 
         future.thenAccept(deferred.settle()::resolve);
         future.exceptionally(error -> {
@@ -283,6 +285,10 @@ public class Promise<T> {
 
         public Promise<T>.Settle settle() {
             return new Settle();
+        }
+
+        public void shadow(Promise<T> promise) {
+            promise.then(settle()::resolve, settle()::reject, settle()::cancel);
         }
     }
 
