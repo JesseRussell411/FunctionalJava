@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 public class ObjectTuple implements Iterable<Object> {
     public static final ObjectTuple EMPTY = new ObjectTuple(new Object[0]);
@@ -14,7 +15,7 @@ public class ObjectTuple implements Iterable<Object> {
     private final Object[] items;
     private final Supplier<Integer> getHashCode;
 
-    public ObjectTuple(Object[] items) {
+    public ObjectTuple(Object[]... items) {
         Objects.requireNonNull(items);
         this.items = Arrays.copyOf(items, items.length);
 
@@ -23,6 +24,10 @@ public class ObjectTuple implements Iterable<Object> {
         } else {
             this.getHashCode = () -> Arrays.hashCode(items);
         }
+    }
+
+    public ObjectTuple(Iterable<?> items) {
+        this(StreamSupport.stream(Objects.requireNonNull(items).spliterator(), false).toArray());
     }
 
     public Object get(int index) {

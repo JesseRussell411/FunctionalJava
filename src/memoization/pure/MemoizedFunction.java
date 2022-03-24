@@ -39,6 +39,5 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
             });
             throw e;
         }
-
     }
 }

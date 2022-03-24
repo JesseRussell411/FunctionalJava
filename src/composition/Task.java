@@ -8,15 +8,23 @@ public class Task<T> {
     private final Promise<T>.Deferred deferred;
     private final Runnable onCancel;
 
-    public Task(Promise<T> base, Runnable onCancel) {
+    public Task(Promise<T>.Deferred base, Runnable onCancel) {
         Objects.requireNonNull(base);
 
-        deferred = base.defer();
+        deferred = base;
         this.onCancel = onCancel;
     }
 
-    public Task(Promise<T> base) {
+    public Task(Promise<T>.Deferred base) {
         this(base, null);
+    }
+
+    public Task(Promise<T> base, Runnable onCancel) {
+        this(base.defer(), onCancel);
+    }
+
+    public Task(Promise<T> base) {
+        this(base.defer(), null);
     }
 
     public Promise<T> promise() {

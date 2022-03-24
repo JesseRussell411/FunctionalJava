@@ -1,8 +1,9 @@
 package memoization.pure;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
-public class VolatileUntilSet<T> {
+public class VolatileUntilSet<T> implements Supplier<T> {
     private volatile T current;
     private T cacheable;
 
@@ -29,6 +30,5 @@ public class VolatileUntilSet<T> {
             cacheable = value;
             return true;
         }
-
     }
 }

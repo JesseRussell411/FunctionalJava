@@ -7,7 +7,7 @@ import memoization.pure.MemoizedFunction;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-public class MemoizedBiRoutine<T, U, R> implements TriFunction<T, U, Object[], R> {
+public class MemoizedBiRoutine<T, U, R> implements TriFunction<T, U, ObjectTuple, R> {
     private final MemoizedFunction<Arguments<T, U>, R> func;
 
     public MemoizedBiRoutine(BiFunction<T, U, R> original) {
@@ -23,8 +23,12 @@ public class MemoizedBiRoutine<T, U, R> implements TriFunction<T, U, Object[], R
 
     public R apply(T t, U u, Object[] dependencies) {
         Objects.requireNonNull(dependencies);
-
         return func.apply(new Arguments<>(t, u, new ObjectTuple(dependencies)));
+    }
+
+    public R apply(T t, U u, ObjectTuple dependencies) {
+        Objects.requireNonNull(dependencies);
+        return func.apply(new Arguments<>(t, u, dependencies));
     }
 
     private record Arguments<T, U>(T t, U u, ObjectTuple objectTuple) {
