@@ -13,7 +13,7 @@ public class WeakMemoizedFunction<T, R> extends MemoizedFunction<T, R> {
     }
 
     @Override
-    protected Map<T, Supplier<R>> initCache() {
+    protected Map<Argument<T>, Supplier<R>> initCache() {
         return new ReadWriteLockedMap<>(new WeakHashMap<>());
     }
 }

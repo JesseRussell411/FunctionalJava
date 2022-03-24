@@ -8,27 +8,17 @@ import java.util.function.Supplier;
 
 public class MemoizedFunction<T, R> implements Function<T, R> {
     private final Function<T, R> original;
-    private final Map<T, Supplier<R>> cache = Objects.requireNonNull(initCache());
-    private final VolatileUntilSet<Supplier<R>> nullEntryCache = new VolatileUntilSet<>();
+    private final Map<Argument<T>, Supplier<R>> cache = Objects.requireNonNull(initCache());
 
     private Supplier<R> fromCache(T t) {
-        if (t == null) {
-            return nullEntryCache.get();
-        } else {
-            return cache.get(t);
-        }
+        return cache.get(new Argument<>(t));
     }
 
     private void cacheResult(T t, Supplier<R> result) {
-        if (t == null) {
-            nullEntryCache.set(result);
-        } else {
-            cache.putIfAbsent(t, result);
-        }
+        cache.put(new Argument<>(t), result);
     }
 
-
-    protected Map<T, Supplier<R>> initCache() {
+    protected Map<Argument<T>, Supplier<R>> initCache() {
         return new ConcurrentHashMap<>();
     }
 
@@ -46,7 +36,7 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
         var fromCache = fromCache(t);
         if (fromCache != null) return fromCache.get();
 
-        // Cache miss, calculate value for real.
+        // Cache miss, calculate t for real.
         try {
             final var result = original.apply(t);
             cacheResult(t, () -> result);
@@ -57,5 +47,8 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
             });
             throw e;
         }
+    }
+
+    protected record Argument<T>(T t) {
     }
 }
