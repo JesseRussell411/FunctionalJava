@@ -116,7 +116,7 @@ public class ArrayUtils {
     }
 
     public static Object[] get(Object[] original, int start, int length) {
-        return get(original, start, length, false, false, );
+        return get(original, start, length, false, false);
     }
 
     public static Object[] get(Object[] original, int start, int length, boolean reversed) {
@@ -381,11 +381,11 @@ public class ArrayUtils {
     }
 
     public static Object[][] partition(Object[] items, int size) {
-        partition(items, size, false, false);
+        return partition(items, size, false, false);
     }
 
     public static Object[][] partition(Object[] items, int size, boolean reversed) {
-        partition(items, size, reversed, false);
+        return partition(items, size, reversed, false);
     }
 
     public static Object[][] partition(Object[] items, int size, boolean reversed, boolean reverseResults) {

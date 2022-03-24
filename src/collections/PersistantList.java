@@ -336,7 +336,18 @@ public class PersistantList<T> {
 
     // iterators
     public class SelfIterator implements Iterator<T> {
-        private ItemIterator iterator = new ItemIterator(root);
+        private ItemIterator itemiterator = new ItemIterator(root);
+
+
+        @Override
+        public boolean hasNext() {
+            return itemiterator.hasNext();
+        }
+
+        @Override
+        public T next() {
+            return (T) itemiterator.next();
+        }
     }
 
     private static class ItemIterator implements Iterator<Object> {

@@ -1,4 +1,4 @@
-package collections;
+package reference;
 
 import java.lang.ref.WeakReference;
 

@@ -12,6 +12,7 @@ public class Main {
     }
 
     public static final Function<Integer, Integer> memoFib = new MemoizedFunction<>((n) -> {
+        if (n == null) return 42;// because douglas adams
         if (n <= 0) return 0;
         if (n == 1) return 1;
 
@@ -93,6 +94,11 @@ public class Main {
             System.out.println(s);
             return null;
         });
+
+        System.out.println("fib of null: " + memoFib.apply(null));
+        System.out.println("fib of null: " + memoFib.apply(null));
+        System.out.println("fib of null: " + memoFib.apply(null));
+
 
         try (final var input = new Scanner(System.in)) {
             while (true) {
