@@ -23,8 +23,7 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
     }
 
     public MemoizedFunction(Function<T, R> original) {
-        Objects.requireNonNull(original);
-        this.original = original;
+        this.original = Objects.requireNonNull(original);
     }
 
     public R hardApply(T t) {
@@ -33,7 +32,7 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
 
     public R apply(T t) {
         // Check the cache.
-        var fromCache = fromCache(t);
+        final var fromCache = fromCache(t);
         if (fromCache != null) return fromCache.get();
 
         // Cache miss, calculate t for real.
