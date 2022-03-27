@@ -29,6 +29,21 @@ public class MemoizedSupplier<T> implements Function<ObjectTuple, T> {
         return func.apply(dependencies);
     }
 
+    public T hardApply(Iterable<?> dependencies) {
+        Objects.requireNonNull(dependencies);
+        return func.hardApply(new ObjectTuple(dependencies));
+    }
+
+    public T hardApply(Object[] dependencies) {
+        Objects.requireNonNull(dependencies);
+        return func.hardApply(new ObjectTuple(dependencies));
+    }
+
+    public T hardApply(ObjectTuple dependencies) {
+        Objects.requireNonNull(dependencies);
+        return func.hardApply(dependencies);
+    }
+
     public T hardGet() {
         return func.hardApply(ObjectTuple.EMPTY);
     }

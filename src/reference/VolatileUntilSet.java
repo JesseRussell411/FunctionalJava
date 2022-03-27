@@ -1,4 +1,4 @@
-package memoization.pure;
+package reference;
 
 import java.util.Objects;
 import java.util.function.Supplier;

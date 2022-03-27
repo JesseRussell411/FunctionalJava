@@ -1,5 +1,7 @@
 package memoization.pure;
 
+import reference.VolatileUntilSet;
+
 import java.util.Objects;
 import java.util.function.Supplier;
 

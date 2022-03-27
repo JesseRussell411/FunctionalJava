@@ -26,10 +26,6 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
         this.original = Objects.requireNonNull(original);
     }
 
-    public R hardApply(T t) {
-        return original.apply(t);
-    }
-
     public R apply(T t) {
         // Check the cache.
         final var fromCache = fromCache(t);
@@ -46,6 +42,23 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
             });
             throw e;
         }
+    }
+
+    public R hardApply(T t) {
+        return original.apply(t);
+    }
+
+    public R cacheApply(T t) {
+        final var fromCache = fromCache(t);
+        if (fromCache != null) {
+            return fromCache.get();
+        } else {
+            return null;
+        }
+    }
+
+    public boolean isCached(T t) {
+        return fromCache(t) != null;
     }
 
     protected record Argument<T>(T t) {

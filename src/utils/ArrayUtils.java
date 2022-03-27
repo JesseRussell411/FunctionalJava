@@ -500,4 +500,10 @@ public class ArrayUtils {
             return b;
         }
     }
+
+    public static Object[] resize(Object[] original, int size) {
+        Objects.requireNonNull(original);
+        if (original.length == size) return original;
+        return Arrays.copyOf(original, size);
+    }
 }
