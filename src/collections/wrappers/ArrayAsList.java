@@ -1,6 +1,7 @@
-package collections;
+package collections.wrappers;
 
 import collections.iteration.ArrayIterator;
+import utils.ArrayUtils;
 
 import java.lang.reflect.Array;
 import java.util.*;
@@ -147,16 +148,17 @@ public class ArrayAsList<T> implements List<T> {
 
     @Override
     public ListIterator<T> listIterator() {
-        return null;
+        return new ArrayIterator<>(array);
     }
 
     @Override
     public ListIterator<T> listIterator(int index) {
-        return null;
+        ArrayUtils.requireIndexInBounds(index, size() + 1);
+        return new ArrayIterator<>(array, index);
     }
 
     @Override
     public List<T> subList(int fromIndex, int toIndex) {
-        return null;
+        return new ArrayAsList<>(Arrays.copyOfRange(array, fromIndex, toIndex));
     }
 }

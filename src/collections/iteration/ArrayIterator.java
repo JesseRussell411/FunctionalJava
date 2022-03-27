@@ -1,22 +1,36 @@
 package collections.iteration;
 
+import utils.ArrayUtils;
+
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 public class ArrayIterator<T> implements ListIterator<T> {
     private final T[] array;
+    private final int end;
     private int index;
 
+    public ArrayIterator(T[] array, int index, int length) {
+        final var end = index + length;
+        ArrayUtils.requireRangeInBounds(0, index, length, array.length); // implicit null check
+
+        this.array = array;
+        this.index = index - 1;
+        this.end = end;
+    }
+
+    public ArrayIterator(T[] array, int index) {
+        this(array, index, array.length - index);
+    }
+
     public ArrayIterator(T[] array) {
-        this.array = Objects.requireNonNull(array);
-        index = -1;
+        this(array, -1, array.length);
     }
 
 
     @Override
     public boolean hasNext() {
-        return index < array.length - 1;
+        return index < end - 1;
     }
 
     @Override
@@ -40,26 +54,26 @@ public class ArrayIterator<T> implements ListIterator<T> {
 
     @Override
     public int nextIndex() {
-        return 0;
+        return hasNext() ? index + 1 : end;
     }
 
     @Override
     public int previousIndex() {
-        return 0;
+        return hasPrevious() ? index - 1 : -1;
     }
 
     @Override
     public void remove() {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void set(T t) {
-
+        array[index] = t;
     }
 
     @Override
     public void add(T t) {
-
+        throw new UnsupportedOperationException();
     }
 }

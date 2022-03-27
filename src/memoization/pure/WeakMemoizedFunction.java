@@ -1,6 +1,6 @@
 package memoization.pure;
 
-import collections.ReadWriteLockedMap;
+import collections.decorators.ReadWriteLockedMap;
 
 import java.util.Map;
 import java.util.WeakHashMap;

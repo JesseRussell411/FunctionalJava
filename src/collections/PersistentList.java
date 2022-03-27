@@ -1,17 +1,19 @@
 package collections;
 
+import collections.iteration.ArrayIterator;
 import collections.iteration.ListEnumeratorIterator;
-import collections.iteration.enumerator.BiDirectionalEnumerator;
 import collections.iteration.enumerator.IndexedBiDirectionalEnumerator;
+import collections.wrappers.ArrayAsList;
 import utils.ArrayUtils;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class PersistentList<T> implements List<T> {
     private static final Object[] EMPTY_ARRAY = new Object[0];
     private static final Leaf EMPTY_LEAF = new Leaf(EMPTY_ARRAY);
-    private static final int PARTITION_SIZE = 32;
+    private static final int PARTITION_SIZE = 16;
     private static final UnsupportedOperationException mutationException = new UnsupportedOperationException("This collection is immutable.");
 
     private final Node root;
@@ -19,6 +21,30 @@ public class PersistentList<T> implements List<T> {
 
     private PersistentList(Node root) {
         this.root = root;
+        size = root.itemCount();
+    }
+
+    public PersistentList(Stream<T> itemStream) {
+        root = fromIterator(itemStream.iterator());
+        size = root.itemCount();
+    }
+
+    public PersistentList(Iterator<T> itemIterator) {
+        root = fromIterator(itemIterator);
+        size = root.itemCount();
+    }
+
+    public PersistentList(Iterable<T> items) {
+        this(items.iterator());
+    }
+
+    public PersistentList(PersistentList<T> items) {
+        root = items.root;
+        size = items.size;
+    }
+
+    public PersistentList(T[] items) {
+        root = fromPartitions(new ArrayAsList<>(ArrayUtils.partition(items, PARTITION_SIZE)));
         size = root.itemCount();
     }
 
@@ -50,15 +76,22 @@ public class PersistentList<T> implements List<T> {
         return true;
     }
 
-    @Override
-    public ListIterator<T> iterator() {
-        return new ListEnumeratorIterator<>(
-                (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, false));
+    public IndexedBiDirectionalEnumerator<T> enumerator(int index) {
+        return (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, index);
     }
 
-    public ListIterator<T> iteratorAtEnd() {
+    public IndexedBiDirectionalEnumerator<T> enumerator() {
+        return enumerator(-1);
+    }
+
+    public ListIterator<T> iterator(int index) {
+        ArrayUtils.requireIndexInBounds(0, index, size() + 1);
         return new ListEnumeratorIterator<>(
-                (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, true));
+                (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, index - 1));
+    }
+
+    public ListIterator<T> iterator() {
+        return iterator(0);
     }
 
     @Override
@@ -95,7 +128,6 @@ public class PersistentList<T> implements List<T> {
         return result;
     }
 
-    @Override
     public int indexOf(Object o) {
         int index = 0;
         for (final var item : this) {
@@ -105,7 +137,6 @@ public class PersistentList<T> implements List<T> {
         return -1;
     }
 
-    @Override
     public int lastIndexOf(Object o) {
         int index = 0;
         int lastIndex = -1;
@@ -118,90 +149,95 @@ public class PersistentList<T> implements List<T> {
 
     @Override
     public ListIterator<T> listIterator() {
-        return null;
+        return iterator();
     }
 
     @Override
     public ListIterator<T> listIterator(int index) {
-        return null;
+        return iterator(index);
     }
 
     @Override
     public List<T> subList(int fromIndex, int toIndex) {
-        return null;
+        return get(fromIndex, toIndex - fromIndex);
     }
-
-    // extract
-    // insert
-    // remove
-    // replace
 
     // =================== list operations, single item =======================
     // extract
     public T get(int index) {
-        return get(index, root);
+        return (T) get(index, root);
     }
 
     // replace
-    public PersistentList<T> set(int index, T item) {
+    public PersistentList<T> withSwap(int index, T item) {
         ArrayUtils.requireIndexInBounds(index, size());
         return new PersistentList<>(set(index, item, root));
     }
 
     // insert
-    public PersistentList<T> add(int index, T item) {
+    public PersistentList<T> withAddition(int index, T item) {
         ArrayUtils.requireIndexInBounds(index, size() + 1);
         return new PersistentList<>(add(index, item, root));
     }
 
     // remove
-    public PersistentList<T> remove(int index) {
+    public PersistentList<T> without(int index) {
         ArrayUtils.requireIndexInBounds(index, size());
-        return new PersistentList<>(remove(index, index + 1, root));
-    }
-
-    // misc
-    public PersistentList<T> put(T item) {
-        return add(size(), item);
-    }
-
-    public PersistentList<T> pop() {
-        if (size() <= 0) return this;
-        return remove(size() - 1);
-    }
-
-    public PersistentList<T> push(T item) {
-        return add(0, item);
-    }
-
-    public PersistentList<T> pull() {
-        if (size() <= 0) return this;
-        return remove(0);
-    }
-
-    public T head() {
-        if (size() <= 0) return null;
-        return get(0);
-    }
-
-    public T tail() {
-        if (size() <= 0) return null;
-        return get(size() - 1);
+        return new PersistentList<>(without(index, index + 1, root));
     }
 
     // ================= list operations, multi item ==========================
+    //extract
     public PersistentList<T> get(int start, int length) {
         ArrayUtils.requireRangeInBounds(start, length, size());
         return new PersistentList<>(get(start, start + length, root));
     }
 
-    public PersistentList<T> replace(int index, Iterable<T> items) {
-        ArrayUtils.requireIndexInBounds(index, size());
-        return new PersistentList<>(replace(index, items.iterator(), root));
+    // replace
+    public PersistentList<T> withReplacement(int index, Stream<T> itemStream) {
+        return withReplacement(index, itemStream.iterator());
     }
 
-    public PersistentList<T> repace(int index, T[] items) {
-        return replace(index, List.of(items));
+    public PersistentList<T> withReplacement(int index, Iterable<T> items) {
+        return withReplacement(index, items.iterator());
+    }
+
+    public PersistentList<T> withReplacement(int index, T[] items) {
+        return withReplacement(index, new ArrayIterator<>(items));
+    }
+
+    public PersistentList<T> withReplacement(int index, Iterator<T> itemIterator) {
+        ArrayUtils.requireIndexInBounds(index, size());
+        return new PersistentList<>(withReplacement(index, itemIterator, root));
+    }
+
+    // insert
+    public PersistentList<T> withInsertion(int index, Stream<T> itemStream) {
+        return withInsertion(index, itemStream.iterator());
+    }
+
+    public PersistentList<T> withInsertion(int index, Iterable<T> items) {
+        return withInsertion(index, items.iterator());
+    }
+
+    public PersistentList<T> withInsertion(int index, Iterator<T> itemIterator) {
+        ArrayUtils.requireIndexInBounds(index, size() + 1);
+        return new PersistentList<>(withInsertion(index, itemIterator, root));
+    }
+
+    public PersistentList<T> withInsertion(int index, T[] items) {
+        return withInsertion(index, new ArrayAsList<>(items));
+    }
+
+    public PersistentList<T> withInsertion(int index, PersistentList<T> items) {
+        ArrayUtils.requireIndexInBounds(index, size() + 1);
+        return new PersistentList<>(withInsertion(index, items.root, root));
+    }
+
+    // remove
+    public PersistentList<T> without(int start, int length) {
+        ArrayUtils.requireRangeInBounds(start, length, size());
+        return new PersistentList<>(without(start, start + length, root));
     }
 
     // private utilities
@@ -242,7 +278,7 @@ public class PersistentList<T> implements List<T> {
         } else throw new IllegalStateException();
     }
 
-    private static Node set(int index, T item, Node root) {
+    private static Node set(int index, Object item, Node root) {
         if (root instanceof Branch branch) {
             if (index < branch.left.itemCount()) {
                 return cleaned(new Branch(
@@ -258,18 +294,18 @@ public class PersistentList<T> implements List<T> {
         } else throw new IllegalStateException();
     }
 
-    private Node replace(int index, Iterator<?> itemIterator, Node root) {
+    private Node withReplacement(int index, Iterator<?> itemIterator, Node root) {
         if (!itemIterator.hasNext()) return root;
 
         if (root instanceof Branch branch) {
             if (index < branch.left.itemCount()) {
                 return cleaned(new Branch(
-                        replace(index, itemIterator, branch.left),
-                        replace(0, itemIterator, branch.right)));
+                        withReplacement(index, itemIterator, branch.left),
+                        withReplacement(0, itemIterator, branch.right)));
             } else {
                 return cleaned(new Branch(
                         branch.left,
-                        replace(index - branch.left.itemCount(), itemIterator, branch.right)));
+                        withReplacement(index - branch.left.itemCount(), itemIterator, branch.right)));
             }
         } else if (root instanceof Leaf leaf) {
             final var newItems = Arrays.copyOf(leaf.items, leaf.items.length);
@@ -281,23 +317,45 @@ public class PersistentList<T> implements List<T> {
         } else throw new IllegalStateException();
     }
 
-    private Node insert(int index, Iterator<?> itemIterator, Node root) {
+    private Node withInsertion(int index, Node items, Node root) {
         if (root instanceof Branch branch) {
             if (index < branch.left.itemCount()) {
                 return cleaned(new Branch(
-                        insert(index, itemIterator, branch.left),
+                        withInsertion(index, items, branch.left),
                         branch.right));
             } else {
                 return cleaned(new Branch(
                         branch.left,
-                        insert(index - branch.left.itemCount(), itemIterator, branch.right)));
+                        withInsertion(index - branch.left.itemCount(), items, branch.right)));
+            }
+        } else if (root instanceof Leaf leaf) {
+            final var withProceeding = index < leaf.items.length
+                    ? withInsertion(items.itemCount(), new ArrayIterator<>(leaf.items, index), items)
+                    : items;
+
+            return index > 0
+                    ? withInsertion(0, new ArrayIterator<>(leaf.items, index), withProceeding)
+                    : withProceeding;
+        } else throw new IllegalStateException();
+    }
+
+    private Node withInsertion(int index, Iterator<?> itemIterator, Node root) {
+        if (root instanceof Branch branch) {
+            if (index < branch.left.itemCount()) {
+                return cleaned(new Branch(
+                        withInsertion(index, itemIterator, branch.left),
+                        branch.right));
+            } else {
+                return cleaned(new Branch(
+                        branch.left,
+                        withInsertion(index - branch.left.itemCount(), itemIterator, branch.right)));
             }
         } else if (root instanceof Leaf leaf) {
             final var partitions = new ArrayList<Object[]>();
             Object[] newPartition = new Object[PARTITION_SIZE];
-
             int p = 0;
 
+            // copy preceding items into partitions
             for (int i = 0; i < index; i++) {
                 newPartition[p++] = leaf.items[i];
                 if (p >= PARTITION_SIZE) {
@@ -307,6 +365,7 @@ public class PersistentList<T> implements List<T> {
                 }
             }
 
+            // copy items from iterator
             while (itemIterator.hasNext()) {
                 newPartition[p++] = itemIterator.next();
                 if (p >= PARTITION_SIZE) {
@@ -316,70 +375,24 @@ public class PersistentList<T> implements List<T> {
                 }
             }
 
+            // copy proceeding items
             for (int i = index; i < leaf.items.length; i++) {
                 newPartition[p++] = leaf.items[i];
                 if (p >= PARTITION_SIZE) {
                     partitions.add(newPartition);
+                    p = 0;
                     if (i < leaf.items.length - 1) {
                         newPartition = new Object[PARTITION_SIZE];
-                        p = 0;
                     }
                 }
             }
 
-            if (p < PARTITION_SIZE) {
-                partitions.set(
-                        partitions.size() - 1,
-                        Arrays.copyOf(
-                                partitions.get(partitions.size() - 1),
-                                p));
+            // trim final partition
+            if (p != 0) {
+                partitions.add(ArrayUtils.resize(newPartition, p));
             }
 
             return fromPartitions(partitions);
-
-//            final var precedingRemainder = index % PARTITION_SIZE;
-//            final var precedingPartitions
-//                    = (index / PARTITION_SIZE)
-//                    + ((precedingRemainder > 0) ? 1 : 0);
-//
-//            int p = PARTITION_SIZE;
-//            // TODO redo
-//            for (int i = 0; i < precedingPartitions; i++) {
-//                for (p = 0; p < PARTITION_SIZE; p++) {
-//                    final var l = i * PARTITION_SIZE + p;
-//                    if (l >= leaf.items.length) break;
-//                    newPartition[p] = leaf.items[l];
-//                }
-//
-//                if (p >= PARTITION_SIZE) {
-//                    partitions.add(newPartition);
-//                    newPartition = new Object[PARTITION_SIZE];
-//                }
-//            }
-//
-//            for (; p < PARTITION_SIZE; p++) {
-//                if (itemIterator.hasNext()) {
-//                    newPartition[p] = itemIterator.next();
-//                } else break;
-//            }
-//
-//            if (p >= PARTITION_SIZE) {
-//                partitions.add(newPartition);
-//                newPartition = new Object[PARTITION_SIZE];
-//                p = 0;
-//            }
-//
-//            while (itemIterator.hasNext()) {
-//                newPartition[p++] = itemIterator.next();
-//
-//                if (p >= PARTITION_SIZE) {
-//                    partitions.add(newPartition);
-//                    newPartition = new Object[PARTITION_SIZE];
-//                    p = 0;
-//                }
-//            }
-
-
         } else throw new IllegalStateException();
     }
 
@@ -396,13 +409,13 @@ public class PersistentList<T> implements List<T> {
             }
         } else if (root instanceof Leaf leaf) {
             final var newItems = ArrayUtils.add(leaf.items, index, item);
-            return fromPartitions(List.of(ArrayUtils.partition(
+            return fromPartitions(new ArrayAsList<>(ArrayUtils.partition(
                     newItems,
                     PARTITION_SIZE)));
         } else throw new IllegalStateException();
     }
 
-    private static Node remove(int start, int end, Node root) {
+    private static Node without(int start, int end, Node root) {
         if (root instanceof Branch branch) {
             final var left = branch.left;
             final var right = branch.right;
@@ -410,17 +423,17 @@ public class PersistentList<T> implements List<T> {
             if (start < left.itemCount()) {
                 if (end <= left.itemCount()) {
                     return cleaned(new Branch(
-                            remove(start, end, left),
+                            without(start, end, left),
                             right));
                 } else {
                     return cleaned(new Branch(
-                            remove(start, left.itemCount(), left),
-                            remove(0, end - left.itemCount(), right)));
+                            without(start, left.itemCount(), left),
+                            without(0, end - left.itemCount(), right)));
                 }
             } else {
                 return cleaned(new Branch(
                         left,
-                        remove(
+                        without(
                                 start - left.itemCount(),
                                 end - left.itemCount(),
                                 right)));
@@ -449,14 +462,37 @@ public class PersistentList<T> implements List<T> {
         }
     }
 
+    private static Node fromIterable(Iterable<?> items) {
+        return fromIterator(items.iterator());
+    }
+
+    private static Node fromIterator(Iterator<?> itemIterator) {
+        if (!itemIterator.hasNext()) return EMPTY_LEAF;
+        final var partitions = new ArrayList<Object[]>();
+        Object[] newPartition = new Object[PARTITION_SIZE];
+        int p = 0;
+
+        while (itemIterator.hasNext()) {
+            newPartition[p++] = itemIterator.next();
+            if (p >= PARTITION_SIZE) {
+                partitions.add(newPartition);
+                newPartition = new Object[PARTITION_SIZE];
+                p = 0;
+            }
+        }
+
+        if (p != 0) {
+            partitions.add(ArrayUtils.resize(newPartition, p));
+        }
+
+        return fromPartitions(partitions);
+    }
+
     // ========= maintenance ============
-    private static Node cleaned(Node node) {
-        if (node instanceof Branch branch) {
-            final var pruned = pruned(branch);
-            if (pruned instanceof Branch prunedBranch) {
-                return balanced(prunedBranch);
-            } else return pruned;
-        } else return node;
+    private static Node cleaned(Branch branch) {
+        final var pruned = pruned(branch);
+        if (!(pruned instanceof Branch prunedBranch)) return pruned;
+        return balanced(prunedBranch);
     }
 
     private static Node pruned(Branch branch) {
@@ -618,10 +654,50 @@ public class PersistentList<T> implements List<T> {
         private int index;
         private int indexInLeaf;
 
-        public ItemEnumerator(Node root, boolean startAtEnd) {
-            this.root = root;
-            this.leafEnumerator = new LeafEnumerator(root, startAtEnd);
-            index = startAtEnd ? root.itemCount() : -1;
+        public ItemEnumerator(Node root, int index) {
+            ArrayUtils.requireIndexInBounds(-1, index, root.itemCount() + 1);
+            this.root = Objects.requireNonNull(root);
+            leafEnumerator = initialize(index);
+        }
+
+        public ItemEnumerator(Node root) {
+            this(root, -1);
+        }
+
+        private LeafEnumerator initialize(int initialIndex) {
+            if (initialIndex <= -1) {
+                this.index = -1;
+                return new LeafEnumerator(root, false);
+            }
+            if (initialIndex >= root.itemCount()) {
+                this.index = root.itemCount();
+                return new LeafEnumerator(root, true);
+            }
+
+            final var location = new Stack<Node>();
+            int locationIndex = 0;
+            int indexInCurrentNode = initialIndex;
+
+            Node currentNode = root;
+            location.push(currentNode);
+
+
+            while (currentNode instanceof Branch currentBranch) {
+                if (indexInCurrentNode < currentBranch.left.itemCount()) {
+                    currentNode = currentBranch.left;
+                    location.push(currentNode);
+                } else {
+                    locationIndex += currentBranch.left.leafCount();
+                    indexInCurrentNode -= currentBranch.left.itemCount();
+
+                    currentNode = currentBranch.right;
+                    location.push(currentNode);
+                }
+            }
+
+            index = initialIndex;
+            indexInLeaf = indexInCurrentNode;
+            return new LeafEnumerator(location, locationIndex, root);
         }
 
         @Override
@@ -691,13 +767,20 @@ public class PersistentList<T> implements List<T> {
     }
 
     private static class LeafEnumerator implements IndexedBiDirectionalEnumerator<Leaf> {
-        private final Stack<Node> location = new Stack<>();
+        private final Stack<Node> location;
         private int locationIndex;
         private final Node root;
 
         public LeafEnumerator(Node root, boolean startAndEnd) {
             this.root = Objects.requireNonNull(root);
             locationIndex = startAndEnd ? root.leafCount() : -1;
+            location = new Stack<>();
+        }
+
+        public LeafEnumerator(Stack<Node> location, int locationIndex, Node root) {
+            this.location = Objects.requireNonNull(location);
+            this.locationIndex = locationIndex;
+            this.root = Objects.requireNonNull(root);
         }
 
         private void drillDownLeft() {
@@ -710,7 +793,6 @@ public class PersistentList<T> implements List<T> {
 
         private void drillDown(boolean right) {
             Node current = location.peek();
-            location.push(current);
             while (current instanceof Branch branch) {
                 if (right) {
                     current = branch.right;
@@ -741,6 +823,7 @@ public class PersistentList<T> implements List<T> {
                 child = location.pop();
                 parent = (Branch) location.peek();
             } while (child == parent.left);
+            location.push(parent.left);
 
             drillDownRight();
             locationIndex--;
@@ -765,6 +848,7 @@ public class PersistentList<T> implements List<T> {
                 child = location.pop();
                 parent = (Branch) location.peek();
             } while (child == parent.right);
+            location.push(parent.right);
 
             drillDownLeft();
             locationIndex++;
@@ -801,7 +885,7 @@ public class PersistentList<T> implements List<T> {
     }
 
 
-    // ============================== interface compliance ========================
+    // ============================== unsupported interface methods ========================
     @Override
     public boolean add(T t) {
         throw mutationException;
@@ -835,6 +919,21 @@ public class PersistentList<T> implements List<T> {
 
     @Override
     public void clear() {
+        throw mutationException;
+    }
+
+    @Override
+    public T set(int index, T element) {
+        throw mutationException;
+    }
+
+    @Override
+    public void add(int index, T element) {
+        throw mutationException;
+    }
+
+    @Override
+    public T remove(int index) {
         throw mutationException;
     }
 }

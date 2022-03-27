@@ -1,12 +1,61 @@
+import collections.wrappers.ArrayAsList;
+import collections.PersistentList;
 import composition.Promise;
 import memoization.pure.MemoizedBiFunction;
 import memoization.pure.MemoizedFunction;
 
+import java.util.List;
 import java.util.Scanner;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class Main {
+    static String iterString(Iterable<?> iter, String delim) {
+        StringBuilder s = new StringBuilder();
+        final var it = iter.iterator();
+
+        if (it.hasNext()) s.append(it.next());
+        while (it.hasNext()) {
+            s.append(delim);
+            s.append(it.next());
+        }
+
+        return s.toString();
+    }
+
+    static String iterString(Iterable<?> iter) {
+        return iterString(iter, ", ");
+    }
+
+    static void print() {
+        System.out.println();
+    }
+
+    static void print(Object o) {
+        System.out.println(o);
+    }
+
+    static void print(Iterable<?> iter) {
+        if (iter == null) print("{  ~~  N U L L  ~~  }");
+        print(iterString(iter));
+    }
+
+    static void print(Object[] items) {
+        if (items == null) print("{  ~~  N U L L  ~~  }");
+        print(iterString(new ArrayAsList<>(items)));
+    }
+
+    static void print(Iterable<?> iter, Object delim) {
+        if (iter == null) print("{  ~~  N U L L  ~~  }");
+        print(iterString(iter, String.valueOf(delim)));
+    }
+
+    static void print(Object[] items, Object delim) {
+        if (items == null) print("{  ~~  N U L L  ~~  }");
+        print(iterString(new ArrayAsList<>(items), String.valueOf(delim)));
+    }
+
     public static int memoFib(int n) {
         return memoFib.apply(n);
     }
@@ -84,6 +133,53 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        var l = new PersistentList<String>(List.of(
+                "apple",
+                "banana",
+                "stroke",
+                "peanut",
+                "tommy",
+                "car",
+                "bank",
+                "chair",
+                "relax",
+                "broken",
+                "knife",
+                "clever",
+                "stoke",
+                "carmel"
+        ));
+        final var originalL = l;
+
+        print(l);
+
+        l = l.withInsertion(1, List.of("apple1", "apple2", "apple3", "apple4"));
+        l = l.withInsertion(l.size(), List.of("this goes at the end", "this is the end"));
+        l = l.withInsertion(0, List.of("this goes at the start"));
+        print(l);
+
+        l = l.withInsertion(0, Stream.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9).map(String::valueOf));
+        print(l, "");
+        l = l.withReplacement(1, Stream.of("a", "b", "c"));
+        print(l, "");
+        l = l.withReplacement(0, Stream.of(">")).withReplacement(l.size() - 1, Stream.of("<"));
+        print(l, "");
+        print(l.withSwap(0, "[").withSwap(l.size() - 1, "]"), "");
+        print(l.withAddition(0, "{").withAddition(l.size() + 1, "}"), "");
+        print(originalL);
+        print(l);
+        print(l.without(3));
+        print(l.without(3, 2));
+        print(l.without(3, 3));
+        print(l.without(3, 4));
+        print();
+        print(l);
+        print(l.without(0));
+        print(l.without(l.size() - 1));
+        print(l.without(0, 2));
+        print(l.without(l.size() - 2, 2));
+
+
         final var promiseChain = new Promise<>(
                 settle1 -> settle1.resolve(new Promise<>(
                         settle2 -> settle2.resolve(new Promise<>(

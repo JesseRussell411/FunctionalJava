@@ -401,13 +401,13 @@ public class ArrayUtils {
 
         final var count = items.length / size;
         final var remainder = items.length % size;
-        final var totalCount = count + remainder > 0 ? 1 : 0;
+        final var totalCount = count + (remainder > 0 ? 1 : 0);
 
         final var result = new Object[totalCount][];
 
         // copy whole partitions
         for (int i = 0; i < count; i++) {
-            final var partition = get(items, i * size, (i + 1) * size, reversed, reverseResults);
+            final var partition = get(items, i * size, (i + 1) * size - (i * size), reversed, reverseResults);
             result[i] = partition;
         }
 
@@ -441,11 +441,11 @@ public class ArrayUtils {
     }
 
     public static int requireRangeInBounds(int lower, int start, int length, int upper) {
-        if (lower > start) throw new IndexOutOfBoundsException(start);
+        if (start < lower) throw new IndexOutOfBoundsException(start);
 
         requireNonNegative(length);
 
-        if (upper <= start + length) throw new IndexOutOfBoundsException(start + length);
+        if (start + length > upper) throw new IndexOutOfBoundsException(start + length);
 
         return start;
     }

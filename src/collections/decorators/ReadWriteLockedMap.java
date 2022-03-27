@@ -1,4 +1,4 @@
-package collections;
+package collections.decorators;
 
 import java.util.Collection;
 import java.util.Map;
