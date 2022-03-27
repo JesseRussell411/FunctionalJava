@@ -11,7 +11,6 @@ import utils.ArrayUtils;
 
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -27,6 +26,11 @@ public class PersistentList<T> implements List<T> {
     private PersistentList(Node root) {
         this.root = root;
         size = root.itemCount();
+    }
+
+    public PersistentList() {
+        root = EMPTY_LEAF;
+        size = 0;
     }
 
     public PersistentList(Stream<T> itemStream) {
@@ -239,7 +243,7 @@ public class PersistentList<T> implements List<T> {
     }
 
     public PersistentList<T> withInsertion(int index, T[] items) {
-        return withInsertion(index, new ArrayAsList<>(items));
+        return withInsertion(index, new ArrayIterator<>(items));
     }
 
     public PersistentList<T> withInsertion(int index, PersistentList<T> items) {
@@ -253,11 +257,47 @@ public class PersistentList<T> implements List<T> {
         return new PersistentList<>(remove(start, start + length, root));
     }
 
-    // misc
+    // ======================== misc list operations, single and multi item =================================
     public PersistentList<T> sorted(Comparator<T> comparator) {
         return new PersistentList<>(stream().sorted(comparator));
     }
 
+    public T head() {
+        if (size() == 0) return null;
+        return get(0);
+    }
+
+    public T tail() {
+        if (size() == 0) return null;
+        return get(size() - 1);
+    }
+
+    public PersistentList<T> head(int length) {
+        return get(0, Math.min(size(), length));
+    }
+
+    public PersistentList<T> tail(int length) {
+        final var trimmedLength = Math.min(size(), length);
+        return get(size() - trimmedLength, trimmedLength);
+    }
+
+    public PersistentList<T> put(T item) {
+        return withAddition(size(), item);
+    }
+
+    public PersistentList<T> pop() {
+        if (size() == 0) return new PersistentList<>();
+        return without(size() - 1);
+    }
+
+    public PersistentList<T> push(T item) {
+        return withAddition(0, item);
+    }
+
+    public PersistentList<T> pull() {
+        if (size() == 0) return new PersistentList<>();
+        return without(0);
+    }
 
     // ============================== private utilities =================================
     private static Object get(int index, Node root) {

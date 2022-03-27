@@ -208,28 +208,45 @@ public class Main {
         print();
         print(randIntList.sorted(Comparator.comparingInt(a -> a)), "\n");
 
-        final var randIntList1_000_000 = randInts(10_000_000, 10_000_000).toList();
+        final var randIntList1_000_000 = randInts(100_000_000, 100_000_000).toList();
 
         final var randIntPList1_000_000 = new PersistentList<>(randIntList1_000_000);
+        print("done generating random nums");
         long start = 0;
         long stop = 0;
 
         final var comp = Comparator.<Integer>comparingInt(a -> a);
 
-        start = System.currentTimeMillis();
-        final var sortedints = randIntList1_000_000.stream().sorted(comp).toList();
-        stop = System.currentTimeMillis();
-        System.out.println("Stream sorting of built in list: " + (stop - start));
+//        start = System.currentTimeMillis();
+//        final var sortedints = randIntList1_000_000.stream().sorted(comp).toList();
+//        stop = System.currentTimeMillis();
+//        System.out.println("Stream sorting of built in list: " + (stop - start));
+//
+//        start = System.currentTimeMillis();
+//        final var sortedSPints = new PersistentList<>(randIntPList1_000_000.stream().sorted(comp));
+//        stop = System.currentTimeMillis();
+//        System.out.println("Stream sorting of Pers list:" + (stop - start));
+//
+//        start = System.currentTimeMillis();
+//        final var sortedPints = randIntPList1_000_000.sorted(comp);
+//        stop = System.currentTimeMillis();
+//        System.out.println("Stream sorting with crap:" + (stop - start));
+
+        final int i = 500_000;
+
 
         start = System.currentTimeMillis();
-        final var sortedSPints = new PersistentList<>(randIntPList1_000_000.stream().sorted(comp));
+        final var withAddition_normal_list = Stream.concat(Stream.concat(randIntList1_000_000.stream().limit(i), Stream.of(-2)), StreamSupport.stream(Spliterators.spliteratorUnknownSize(randIntList1_000_000.listIterator(i), 0), true)).toList();
         stop = System.currentTimeMillis();
-        System.out.println("Stream sorting of Pers list:" + (stop - start));
+        System.out.println("insertion into list (in place):" + (stop - start));
 
         start = System.currentTimeMillis();
-        final var sortedPints = randIntPList1_000_000.sorted(comp);
+        final var withAddition = randIntPList1_000_000.withAddition(i, -2);
         stop = System.currentTimeMillis();
-        System.out.println("Stream sorting with crap:" + (stop - start));
+        System.out.println("insertion into plist:" + (stop - start));
+
+        print(withAddition_normal_list.get(i));
+        print(withAddition.get(i));
 
 
         final var promiseChain = new Promise<>(
