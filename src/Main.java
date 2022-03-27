@@ -4,24 +4,31 @@ import composition.Promise;
 import memoization.pure.MemoizedBiFunction;
 import memoization.pure.MemoizedFunction;
 
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class Main {
-    static String iterString(Iterable<?> iter, String delim) {
+    static String iterString(Iterator<?> iter, String delim) {
         StringBuilder s = new StringBuilder();
-        final var it = iter.iterator();
 
-        if (it.hasNext()) s.append(it.next());
-        while (it.hasNext()) {
+        if (iter.hasNext()) s.append(iter.next());
+        while (iter.hasNext()) {
             s.append(delim);
-            s.append(it.next());
+            s.append(iter.next());
         }
 
         return s.toString();
+    }
+
+    static String iterString(Iterable<?> iter, String delim) {
+        return iterString(iter.iterator(), delim);
+    }
+
+    static String iterString(Iterator<?> iter) {
+        return iterString(iter, ", ");
     }
 
     static String iterString(Iterable<?> iter) {
@@ -41,12 +48,22 @@ public class Main {
         print(iterString(iter));
     }
 
+    static void print(Iterator<?> iter) {
+        if (iter == null) print("{  ~~  N U L L  ~~  }");
+        print(iterString(iter));
+    }
+
     static void print(Object[] items) {
         if (items == null) print("{  ~~  N U L L  ~~  }");
         print(iterString(new ArrayAsList<>(items)));
     }
 
     static void print(Iterable<?> iter, Object delim) {
+        if (iter == null) print("{  ~~  N U L L  ~~  }");
+        print(iterString(iter, String.valueOf(delim)));
+    }
+
+    static void print(Iterator<?> iter, Object delim) {
         if (iter == null) print("{  ~~  N U L L  ~~  }");
         print(iterString(iter, String.valueOf(delim)));
     }
@@ -132,6 +149,12 @@ public class Main {
         }
     }
 
+    static final Random rand = new Random();
+
+    static Stream<Integer> randInts(int size, int length) {
+        return Stream.generate(() -> rand.nextInt(size)).limit(length);
+    }
+
     public static void main(String[] args) {
         var l = new PersistentList<String>(List.of(
                 "apple",
@@ -178,6 +201,35 @@ public class Main {
         print(l.without(l.size() - 1));
         print(l.without(0, 2));
         print(l.without(l.size() - 2, 2));
+
+        final var randIntList = new PersistentList<>(randInts(10000, 100));
+
+        print(randIntList);
+        print();
+        print(randIntList.sorted(Comparator.comparingInt(a -> a)), "\n");
+
+        final var randIntList1_000_000 = randInts(10_000_000, 10_000_000).toList();
+
+        final var randIntPList1_000_000 = new PersistentList<>(randIntList1_000_000);
+        long start = 0;
+        long stop = 0;
+
+        final var comp = Comparator.<Integer>comparingInt(a -> a);
+
+        start = System.currentTimeMillis();
+        final var sortedints = randIntList1_000_000.stream().sorted(comp).toList();
+        stop = System.currentTimeMillis();
+        System.out.println("Stream sorting of built in list: " + (stop - start));
+
+        start = System.currentTimeMillis();
+        final var sortedSPints = new PersistentList<>(randIntPList1_000_000.stream().sorted(comp));
+        stop = System.currentTimeMillis();
+        System.out.println("Stream sorting of Pers list:" + (stop - start));
+
+        start = System.currentTimeMillis();
+        final var sortedPints = randIntPList1_000_000.sorted(comp);
+        stop = System.currentTimeMillis();
+        System.out.println("Stream sorting with crap:" + (stop - start));
 
 
         final var promiseChain = new Promise<>(

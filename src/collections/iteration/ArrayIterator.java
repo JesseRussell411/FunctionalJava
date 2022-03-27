@@ -24,7 +24,7 @@ public class ArrayIterator<T> implements ListIterator<T> {
     }
 
     public ArrayIterator(T[] array) {
-        this(array, -1, array.length);
+        this(array, 0, array.length);
     }
 
 
