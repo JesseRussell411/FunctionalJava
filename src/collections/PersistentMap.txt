@@ -1,0 +1,106 @@
+package collections;
+
+import java.util.Map;
+import java.util.Objects;
+
+public class PersistentMap<K, V> {
+    private Node root;
+
+    public boolean containsKey(K key) {
+        return containsKey(key, Objects.hashCode(key), root);
+    }
+
+    private boolean containsKey(K key, int keyID, Node node) {
+        if (node instanceof Branch branch) {
+            if (keyID <= branch.pivot()) {
+                return containsKey(key, keyID, branch.left);
+            } else {
+                return containsKey(key, keyID, branch.right);
+            }
+        } else if (node instanceof Leaf leaf) {
+            for (final var entry : leaf.entries) {
+                if (Objects.equals(key, entry.getKey())) return true;
+            }
+            return false;
+        } else throw new IllegalStateException();
+    }
+
+    private V get(K key) {
+        return get(key, Objects.hashCode(key), root);
+    }
+
+    private V get(K key, int keyID, Node node) {
+        if (node instanceof Branch branch) {
+            if (keyID <= branch.pivot()) {
+                return get(key, keyID, branch.left);
+            } else {
+                return get(key, keyID, branch.right);
+            }
+        } else if (node instanceof Leaf leaf) {
+            for (final var entry : leaf.entries) {
+                if (Objects.equals(key, entry.getKey())) return entry.getValue();
+            }
+            return null;
+        } else throw new IllegalStateException();
+    }
+
+    private abstract class Node {
+        public abstract int pivot();
+    }
+
+    private class Branch implements Node {
+        private final Node left;
+        private final Node right;
+        private final int pivot;
+
+        public Branch(Node left, Node right) {
+            this.left = left;
+            this.right = right;
+            pivot = left.pivot();
+        }
+
+        @Override
+        public int pivot() {
+            return pivot;
+        }
+    }
+
+    private class Leaf implements Node {
+        private final int id;
+        private final PersistentList<Entry> entries;
+
+        public Leaf(int id, PersistentList<Entry> entries) {
+            this.id = id;
+            this.entries = entries;
+        }
+
+
+        @Override
+        public int pivot() {
+            return id;
+        }
+    }
+
+    public class Entry implements Map<K, V>.Entry {
+        private final K key;
+        private final V value;
+
+        public Entry(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public K getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public Object setValue(Object value) {
+            throw new UnsupportedOperationException();
+        }
+    }
+}
