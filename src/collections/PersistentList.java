@@ -59,6 +59,11 @@ public class PersistentList<T> implements List<T> {
 
     // interface compliance
     @Override
+    public Spliterator<T> spliterator(){
+        return Spliterators.spliterator(this, Spliterator.IMMUTABLE);
+    }
+
+    @Override
     public int size() {
         return size;
     }

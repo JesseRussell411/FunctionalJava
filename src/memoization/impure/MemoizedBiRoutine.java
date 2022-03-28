@@ -1,13 +1,13 @@
 package memoization.impure;
 
-import collections.ObjectTuple;
+import collections.ListRecord;
 import functionPlus.TriFunction;
 import memoization.pure.MemoizedFunction;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-public class MemoizedBiRoutine<T, U, R> implements TriFunction<T, U, ObjectTuple, R> {
+public class MemoizedBiRoutine<T, U, R> implements TriFunction<T, U, ListRecord<?>, R> {
     private final MemoizedFunction<Arguments<T, U>, R> func;
 
     public MemoizedBiRoutine(BiFunction<T, U, R> original) {
@@ -18,19 +18,19 @@ public class MemoizedBiRoutine<T, U, R> implements TriFunction<T, U, ObjectTuple
     }
 
     public R hardApply(T t, U u) {
-        return func.hardApply(new Arguments<>(t, u, ObjectTuple.EMPTY));
+        return func.hardApply(new Arguments<>(t, u, new ListRecord<>()));
     }
 
     public R apply(T t, U u, Object[] dependencies) {
         Objects.requireNonNull(dependencies);
-        return func.apply(new Arguments<>(t, u, new ObjectTuple(dependencies)));
+        return func.apply(new Arguments<>(t, u, new ListRecord<>(dependencies)));
     }
 
-    public R apply(T t, U u, ObjectTuple dependencies) {
+    public R apply(T t, U u, ListRecord<?> dependencies) {
         Objects.requireNonNull(dependencies);
         return func.apply(new Arguments<>(t, u, dependencies));
     }
 
-    private record Arguments<T, U>(T t, U u, ObjectTuple objectTuple) {
+    private record Arguments<T, U>(T t, U u, ListRecord<?> objectTuple) {
     }
 }
