@@ -18,12 +18,12 @@ public class WeakLazy<T> implements Supplier<T> {
     }
 
     public T get() {
-        var fromCache = this.cache.get();
+        var fromCache = cache.get();
         if (fromCache != null) return fromCache.current;
         if (exceptionCache != null) throw exceptionCache;
 
         synchronized (this) {
-            fromCache = this.cache.get();
+            fromCache = cache.get();
             if (fromCache != null) return fromCache.current;
             if (exceptionCache != null) throw exceptionCache;
 

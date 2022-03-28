@@ -57,11 +57,12 @@ public class PersistentList<T> implements List<T> {
         size = root.itemCount();
     }
 
+    // interface compliance
+    @Override
     public int size() {
         return size;
     }
 
-    // interface compliance
     @Override
     public boolean isEmpty() {
         return size() == 0;
@@ -82,6 +83,30 @@ public class PersistentList<T> implements List<T> {
             if (!contains(item)) return false;
         }
 
+        return true;
+    }
+
+    public boolean containsAll(Iterable<?> items) {
+        final var thisItemIterator = this.iterator();
+        final var cache = new HashSet<T>();
+
+        itemLoop:
+        for (final var item : items) {
+            // check cache
+            if (cache.contains(item)) continue;
+
+            // cache miss, continue iterating through list items.
+            while (thisItemIterator.hasNext()) {
+                final var thisItem = thisItemIterator.next();
+                cache.add(thisItem);
+                if (Objects.equals(item, thisItem)) continue itemLoop;
+            }
+
+            // item not found
+            return false;
+        }
+
+        // All items were not-not found, so they must have all been found.
         return true;
     }
 
@@ -109,6 +134,10 @@ public class PersistentList<T> implements List<T> {
 
     public Stream<T> stream() {
         return stream(true);
+    }
+
+    public ListRecord<T> toListRecord() {
+        return new ListRecord<>(this);
     }
 
     @Override
@@ -219,7 +248,15 @@ public class PersistentList<T> implements List<T> {
         return withReplacement(index, items.iterator());
     }
 
+    public PersistentList<T> withReplacement(int index, Collection<T> items) {
+        ArrayUtils.requireIndexInBounds(index, size());
+        if (items.size() == 0) return this;
+        return withReplacement(index, items.iterator());
+    }
+
     public PersistentList<T> withReplacement(int index, T[] items) {
+        ArrayUtils.requireIndexInBounds(index, size());
+        if (items.length == 0) return this;
         return withReplacement(index, new ArrayIterator<>(items));
     }
 
@@ -242,12 +279,21 @@ public class PersistentList<T> implements List<T> {
         return new PersistentList<>(withInsertion(index, itemIterator, root));
     }
 
+    public PersistentList<T> withInsertion(int index, Collection<T> items) {
+        ArrayUtils.requireIndexInBounds(index, size() + 1);
+        if (items.size() == 0) return this;
+        return withInsertion(index, items.iterator());
+    }
+
     public PersistentList<T> withInsertion(int index, T[] items) {
+        ArrayUtils.requireIndexInBounds(index, size() + 1);
+        if (items.length == 0) return this;
         return withInsertion(index, new ArrayIterator<>(items));
     }
 
     public PersistentList<T> withInsertion(int index, PersistentList<T> items) {
         ArrayUtils.requireIndexInBounds(index, size() + 1);
+        if (items.size() == 0) return this;
         return new PersistentList<>(withInsertion(index, items.root, root));
     }
 
@@ -973,7 +1019,6 @@ public class PersistentList<T> implements List<T> {
     public boolean remove(Object o) {
         throw mutationException;
     }
-
 
     @Override
     public boolean addAll(Collection<? extends T> c) {

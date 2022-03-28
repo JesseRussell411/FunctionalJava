@@ -220,7 +220,6 @@ public class ArrayUtils {
     }
 
     // single
-
     public static Object[] remove(Object[] original, int index) {
         return remove(original, index, false, false);
     }
@@ -244,6 +243,10 @@ public class ArrayUtils {
     public static Object[] set(Object[] destination, int index, Object item, boolean reversed, boolean reverseResult) {
         Objects.requireNonNull(destination);
         requireIndexInBounds(index, destination.length);
+
+        if (reversed == reverseResult) {
+            if (destination[reverseIndexIf(reversed, index, destination.length)] == item) return destination;
+        }
 
         final var result = new Object[destination.length];
         final var end = index + 1;
