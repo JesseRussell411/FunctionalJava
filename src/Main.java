@@ -274,6 +274,8 @@ public class Main {
         ps = ps.withMany(randInts(1000, 100));
 
         print(ps, "\n");
+        print("==========================");
+        print(ps.reversedIterator(), "\n");
 
 
         try (final var input = new Scanner(System.in)) {

@@ -1,7 +1,9 @@
 package collections;
 
 import collections.iteration.ArrayIterator;
+import collections.iteration.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
+import collections.iteration.enumerator.BiDirectionalEnumerator;
 import collections.iteration.enumerator.Enumerator;
 
 import java.util.Iterator;
@@ -317,20 +319,38 @@ public class PersistentSet<T> implements Enumerable<T> {
         }
     }
 
+
     @Override
-    public Enumerator<T> enumerator() {
-        return new SelfEnumerator<>(root);
+    public BiDirectionalEnumerator<T> enumerator() {
+        return enumerator(false);
     }
 
-    private static class NodeEnumerator<T> implements Enumerator<Node<T>> {
+    public BiDirectionalEnumerator<T> enumerator(boolean startAtEnd) {
+        return new SelfEnumerator<>(root, startAtEnd);
+    }
+
+    public Iterator<T> reversedIterator() {
+        return new ReversedEnumeratorIterator<>(enumerator(true));
+    }
+
+    private static class NodeEnumerator<T> implements BiDirectionalEnumerator<Node<T>> {
         final Stack<Node<T>> location = new Stack<>();
-        boolean started = false;
+        boolean beforeStart;
+        boolean afterEnd;
 
 
-        NodeEnumerator(Node<T> root) {
+        NodeEnumerator(Node<T> root, boolean startAndEnd) {
             if (root != null) {
                 location.push(root);
-                drillDownLeft();
+                if (startAndEnd) {
+                    drillDownRight();
+                    afterEnd = true;
+                    beforeStart = false;
+                } else {
+                    drillDownLeft();
+                    beforeStart = true;
+                    afterEnd = false;
+                }
             }
         }
 
@@ -340,12 +360,21 @@ public class PersistentSet<T> implements Enumerable<T> {
             }
         }
 
+        private void drillDownRight() {
+            while (location.peek().right != null) {
+                location.push(location.peek().right);
+            }
+        }
+
         @Override
         public boolean moveNext() {
             if (location.isEmpty()) return false;
-            if (!started) {
-                started = true;
+            if (beforeStart) {
+                beforeStart = false;
                 return true;
+            }
+            if (afterEnd) {
+                return false;
             }
             if (location.peek().right != null) {
                 location.push(location.peek().right);
@@ -354,25 +383,58 @@ public class PersistentSet<T> implements Enumerable<T> {
                 Node<T> child;
                 do {
                     child = location.pop();
-                    if (location.isEmpty()) return false;
+                    if (location.isEmpty()) {
+                        location.push(child);
+                        drillDownRight();
+                        afterEnd = true;
+                        return false;
+                    }
                 } while (child == location.peek().right);
             }
             return true;
         }
 
         @Override
+        public boolean movePrevious() {
+            if (location.isEmpty()) return false;
+            if (afterEnd) {
+                afterEnd = false;
+                return true;
+            }
+            if (beforeStart) {
+                return false;
+            }
+            if (location.peek().left != null) {
+                location.push(location.peek().left);
+                drillDownRight();
+            } else {
+                Node<T> child;
+                do {
+                    child = location.pop();
+                    if (location.isEmpty()) {
+                        location.push(child);
+                        drillDownLeft();
+                        beforeStart = true;
+                        return false;
+                    }
+                } while (child == location.peek().left);
+            }
+            return true;
+        }
+
+        @Override
         public Node<T> current() {
-            if (location.isEmpty()) throw new NoSuchElementException();
+            if (beforeStart || afterEnd || location.isEmpty()) throw new NoSuchElementException();
             return location.peek();
         }
     }
 
-    public static class SelfEnumerator<T> implements Enumerator<T> {
+    public static class SelfEnumerator<T> implements BiDirectionalEnumerator<T> {
         private final NodeEnumerator<T> nodes;
-        private Enumerator<T> localEnumerator = null;
+        private BiDirectionalEnumerator<T> localEnumerator = null;
 
-        private SelfEnumerator(Node<T> root) {
-            nodes = new NodeEnumerator<>(root);
+        private SelfEnumerator(Node<T> root, boolean startAtEnd) {
+            nodes = new NodeEnumerator<>(root, startAtEnd);
         }
 
         private boolean advanceNextNode() {
@@ -384,9 +446,24 @@ public class PersistentSet<T> implements Enumerable<T> {
             return true;
         }
 
+        private boolean advancePreviousNode() {
+            do {
+                if (nodes.movePrevious()) {
+                    localEnumerator = nodes.current().entries.enumerator(true);
+                } else return false;
+            } while (!localEnumerator.movePrevious());
+            return true;
+        }
+
         @Override
         public boolean moveNext() {
             if (localEnumerator == null || !localEnumerator.moveNext()) return advanceNextNode();
+            return true;
+        }
+
+        @Override
+        public boolean movePrevious() {
+            if (localEnumerator == null || !localEnumerator.movePrevious()) return advancePreviousNode();
             return true;
         }
 

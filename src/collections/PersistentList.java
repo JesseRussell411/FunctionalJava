@@ -4,6 +4,7 @@ import annotations.UnsupportedOperation;
 import collections.iteration.ArrayIterator;
 import collections.iteration.IterableUtils;
 import collections.iteration.ListEnumeratorIterator;
+import collections.iteration.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.Enumerator;
 import collections.iteration.enumerator.IndexedBiDirectionalEnumerator;
@@ -122,6 +123,14 @@ public class PersistentList<T> implements List<T> {
         return true;
     }
 
+    public IndexedBiDirectionalEnumerator<T> enumerator(boolean startAtEnd) {
+        if (startAtEnd) {
+            return (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, size());
+        } else {
+            return (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, 0);
+        }
+    }
+
     public IndexedBiDirectionalEnumerator<T> enumerator(int index) {
         return (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, index);
     }
@@ -134,6 +143,10 @@ public class PersistentList<T> implements List<T> {
         ArrayUtils.requireIndexInBounds(0, index, size() + 1);
         return new ListEnumeratorIterator<>(
                 (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, index - 1));
+    }
+
+    public Iterator<T> reversedIterator() {
+        return new ReversedEnumeratorIterator<>(enumerator(true));
     }
 
     @Override
