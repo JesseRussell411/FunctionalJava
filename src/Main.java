@@ -1,4 +1,5 @@
 import collections.PersistentSet;
+import collections.PersistentTreeSet;
 import collections.wrappers.ArrayAsList;
 import collections.PersistentList;
 import collections.PersistentMap;
@@ -318,6 +319,11 @@ public class Main {
         print(pm.with("six", "6").size());
         print(pm.without("nine").size());
         print(pm.with("nine", "3^3").size());
+
+        var pts = new PersistentTreeSet<Integer>();
+        pts = pts.withMany(randInts(1000, 10));
+
+        print(pts.stream().sorted().iterator(), "\n");
 
 
         try (final var input = new Scanner(System.in)) {
