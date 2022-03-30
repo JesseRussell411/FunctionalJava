@@ -15,7 +15,6 @@ public class MergeIterable<T> implements Iterable<T> {
         this.comparator = Objects.requireNonNull(comparator);
     }
 
-
     @Override
     public Iterator<T> iterator() {
         return new MergeIterator<>(iterA.iterator(), iterB.iterator(), comparator);

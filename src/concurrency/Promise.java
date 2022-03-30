@@ -1,4 +1,4 @@
-package composition;
+package concurrency;
 
 import errors.CancellationReason;
 
@@ -20,7 +20,7 @@ public class Promise<T> {
     private Promise() {
     }
 
-    public Promise(Consumer<Settle> initializer) {
+    public Promise(Consumer<Promise<T>.Settle> initializer) {
         initializer.accept(new Settle());
     }
 

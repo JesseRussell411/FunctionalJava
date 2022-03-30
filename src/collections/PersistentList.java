@@ -1,5 +1,6 @@
 package collections;
 
+import annotations.UnsupportedOperation;
 import collections.iteration.ArrayIterator;
 import collections.iteration.IterableUtils;
 import collections.iteration.ListEnumeratorIterator;
@@ -57,9 +58,15 @@ public class PersistentList<T> implements List<T> {
         size = root.itemCount();
     }
 
+    // factories
+    @SafeVarargs
+    public static <T> PersistentList<T> of(T... items) {
+        return new PersistentList<>(items);
+    }
+
     // interface compliance
     @Override
-    public Spliterator<T> spliterator(){
+    public Spliterator<T> spliterator() {
         return Spliterators.spliterator(this, Spliterator.IMMUTABLE);
     }
 
@@ -98,13 +105,13 @@ public class PersistentList<T> implements List<T> {
         itemLoop:
         for (final var item : items) {
             // check cache
-            if (cache.contains(item)) continue;
+            if (cache.contains(item)) continue; // Item found, continue to next item.
 
             // cache miss, continue iterating through list items.
             while (thisItemIterator.hasNext()) {
                 final var thisItem = thisItemIterator.next();
                 cache.add(thisItem);
-                if (Objects.equals(item, thisItem)) continue itemLoop;
+                if (Objects.equals(item, thisItem)) continue itemLoop; // Item found, continue to next item.
             }
 
             // item not found
@@ -129,6 +136,7 @@ public class PersistentList<T> implements List<T> {
                 (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, index - 1));
     }
 
+    @Override
     public ListIterator<T> iterator() {
         return iterator(0);
     }
@@ -348,6 +356,30 @@ public class PersistentList<T> implements List<T> {
     public PersistentList<T> pull() {
         if (size() == 0) return new PersistentList<>();
         return without(0);
+    }
+
+    public PersistentList<T> withoutFirstOccurrence(T item) {
+        final var tryResult = withoutFirstOccurrence(root, item);
+        if (tryResult == null) {
+            return this;
+        } else {
+            return new PersistentList<>(tryResult);
+        }
+    }
+
+    public T getFirstOccurence(T item) {
+        if (item == null) return null;
+        for (final var thisItem : this) {
+            if (Objects.equals(item, thisItem)) return thisItem;
+        }
+        return null;
+    }
+
+    public PersistentList<T> replaceFirstOccurence(T item) {
+        if (item == null) return this;
+        final var result = replaceFirstOccurrence(root, item);
+        if (result == null) return this;
+        return new PersistentList<>(result);
     }
 
     // ============================== private utilities =================================
@@ -671,6 +703,44 @@ public class PersistentList<T> implements List<T> {
         }
     }
 
+    private static Node withoutFirstOccurrence(Node node, Object item) {
+        if (node instanceof Branch branch) {
+            final var leftResult = withoutFirstOccurrence(branch.left, item);
+            if (leftResult != null) return cleaned(new Branch(leftResult, branch.right));
+
+            final var rightResult = withoutFirstOccurrence(branch.right, item);
+            if (rightResult != null) return cleaned(new Branch(branch.left, rightResult));
+
+            return null;
+        } else if (node instanceof Leaf leaf) {
+            for (int i = 0; i < leaf.items.length; i++) {
+                if (Objects.equals(item, leaf.items[i])) {
+                    return new Leaf(ArrayUtils.remove(leaf.items, i));
+                }
+            }
+            return null;
+        } else throw new IllegalStateException();
+    }
+
+    private static Node replaceFirstOccurrence(Node node, Object item) {
+        if (node instanceof Branch branch) {
+            final var leftResult = replaceFirstOccurrence(branch.left, item);
+            if (leftResult != null) return cleaned(new Branch(leftResult, branch.right));
+
+            final var rightResult = replaceFirstOccurrence(branch.right, item);
+            if (rightResult != null) return cleaned(new Branch(branch.left, rightResult));
+
+            return null;
+        } else if (node instanceof Leaf leaf) {
+            for (int i = 0; i < leaf.items.length; i++) {
+                if (Objects.equals(item, leaf.items[i])) {
+                    return new Leaf(ArrayUtils.set(leaf.items, i, item));
+                }
+            }
+            return null;
+        } else throw new IllegalStateException();
+    }
+
     // ========================= inner classes ====================================
     private interface Node extends Enumerable<Object> {
         int nodeCount();
@@ -829,11 +899,23 @@ public class PersistentList<T> implements List<T> {
             return new LeafEnumerator(location, locationIndex, root);
         }
 
+        private boolean advanceLeafNext() {
+            if (!leafEnumerator.moveNext()) return false;
+            if (leafEnumerator.current().items.length == 0) return advanceLeafNext();
+            return true;
+        }
+
+        private boolean advanceLeafPrevious() {
+            if (!leafEnumerator.movePrevious()) return false;
+            if (leafEnumerator.current().items.length == 0) return advanceLeafPrevious();
+            return true;
+        }
+
         @Override
         public boolean movePrevious() {
             if (index == root.itemCount()) {
                 index = root.itemCount() - 1;
-                if (leafEnumerator.movePrevious()) {
+                if (advanceLeafPrevious()) {
                     indexInLeaf = leafEnumerator.current().itemCount() - 1;
                     return true;
                 } else return false;
@@ -845,7 +927,7 @@ public class PersistentList<T> implements List<T> {
                 indexInLeaf--;
                 index--;
                 return true;
-            } else if (leafEnumerator.movePrevious()) {
+            } else if (advanceLeafPrevious()) {
                 indexInLeaf = leafEnumerator.current().itemCount() - 1;
                 index--;
                 return true;
@@ -859,7 +941,7 @@ public class PersistentList<T> implements List<T> {
         public boolean moveNext() {
             if (index == -1) {
                 index = 0;
-                if (leafEnumerator.moveNext()) {
+                if (advanceLeafNext()) {
                     indexInLeaf = 0;
                     return true;
                 } else return false;
@@ -871,7 +953,7 @@ public class PersistentList<T> implements List<T> {
                 indexInLeaf++;
                 index++;
                 return true;
-            } else if (leafEnumerator.moveNext()) {
+            } else if (advanceLeafNext()) {
                 indexInLeaf = 0;
                 index++;
                 return true;
@@ -884,7 +966,7 @@ public class PersistentList<T> implements List<T> {
         @Override
         public Object current() {
             final var currentLeaf = leafEnumerator.current();
-            if (currentLeaf != null) {
+            if (currentLeaf != null && currentLeaf.items.length > 0) {
                 return currentLeaf.items[indexInLeaf];
             } else return null;
         }
@@ -1011,56 +1093,67 @@ public class PersistentList<T> implements List<T> {
         public int currentIndex() {
             return locationIndex;
         }
+
     }
 
 
     // ============================== unsupported interface methods ========================
     @Override
+    @UnsupportedOperation
     public boolean add(T t) {
         throw mutationException;
     }
 
     @Override
+    @UnsupportedOperation
     public boolean remove(Object o) {
         throw mutationException;
     }
 
     @Override
+    @UnsupportedOperation
     public boolean addAll(Collection<? extends T> c) {
         throw mutationException;
     }
 
     @Override
+    @UnsupportedOperation
     public boolean addAll(int index, Collection<? extends T> c) {
         throw mutationException;
     }
 
     @Override
+    @UnsupportedOperation
     public boolean removeAll(Collection<?> c) {
         throw mutationException;
     }
 
     @Override
+    @UnsupportedOperation
     public boolean retainAll(Collection<?> c) {
         throw mutationException;
     }
 
     @Override
+    @UnsupportedOperation
     public void clear() {
         throw mutationException;
     }
 
     @Override
+    @UnsupportedOperation
     public T set(int index, T element) {
         throw mutationException;
     }
 
     @Override
+    @UnsupportedOperation
     public void add(int index, T element) {
         throw mutationException;
     }
 
     @Override
+    @UnsupportedOperation
     public T remove(int index) {
         throw mutationException;
     }

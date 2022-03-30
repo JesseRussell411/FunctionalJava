@@ -1,6 +1,8 @@
+import collections.ListRecord;
+import collections.PersistentSet;
 import collections.wrappers.ArrayAsList;
 import collections.PersistentList;
-import composition.Promise;
+import concurrency.Promise;
 import memoization.pure.MemoizedBiFunction;
 import memoization.pure.MemoizedFunction;
 
@@ -8,7 +10,6 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class Main {
     static String iterString(Iterator<?> iter, String delim) {
@@ -208,7 +209,7 @@ public class Main {
         print();
         print(randIntList.sorted(Comparator.comparingInt(a -> a)), "\n");
 
-        final var randIntList1_000_000 = randInts(10_000_000, 10_000_000).toList();
+        final var randIntList1_000_000 = randInts(1_000_000, 1_000_000).toList();
 
         final var randIntPList1_000_000 = new PersistentList<>(randIntList1_000_000);
         print("done generating random nums");
@@ -247,8 +248,6 @@ public class Main {
 //
 //        print(withAddition_normal_list.get(i));
 //        print(withAddition.get(i));
-
-
         final var promiseChain = new Promise<>(
                 settle1 -> settle1.resolve(new Promise<>(
                         settle2 -> settle2.resolve(new Promise<>(
@@ -263,6 +262,18 @@ public class Main {
         System.out.println("fib of null: " + memoFib.apply(null));
         System.out.println("fib of null: " + memoFib.apply(null));
         System.out.println("fib of null: " + memoFib.apply(null));
+
+
+        var ps = new PersistentSet<Integer>();
+        ps = ps.with(9).with(9).with(9).with(5).with(90).with(10);
+        print(ps);
+        System.out.println(ps.contains(9));
+        System.out.println(ps.contains(12));
+        System.out.println(ps.without(9).contains(9));
+        print(ps.without(9));
+        ps = ps.withMany(randInts(1000, 100));
+
+        print(ps, "\n");
 
 
         try (final var input = new Scanner(System.in)) {

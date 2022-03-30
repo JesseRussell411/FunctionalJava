@@ -33,4 +33,8 @@ public class Lazy<T> implements Supplier<T> {
             }
         }
     }
+
+    public boolean isCached() {
+        return cache.isSet();
+    }
 }

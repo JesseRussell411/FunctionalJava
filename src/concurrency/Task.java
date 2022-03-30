@@ -1,4 +1,4 @@
-package composition;
+package concurrency;
 
 import errors.CancellationReason;
 
