@@ -4,17 +4,12 @@ import collections.iteration.ArrayIterator;
 import collections.iteration.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
-import collections.iteration.enumerator.Enumerator;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class PersistentSet<T> implements Enumerable<T> {
     private final Node<T> root;
-
 
     private PersistentSet(Node<T> root) {
         this.root = root;
@@ -130,7 +125,7 @@ public class PersistentSet<T> implements Enumerable<T> {
             return new Node<>(
                     n.left,
                     n.right,
-                    n.entries.replaceFirstOccurence(value),
+                    n.entries.replaceFirstOccurenceOrAppend(value),
                     n.pivot).balanced();
         }
     }
@@ -267,11 +262,11 @@ public class PersistentSet<T> implements Enumerable<T> {
         } else return n;
     }
 
-    static int weightOf(Node<?> n) {
+    static int heightOf(Node<?> n) {
         if (n == null) {
             return 0;
         } else {
-            return n.weight;
+            return n.depth;
         }
     }
 
@@ -297,7 +292,7 @@ public class PersistentSet<T> implements Enumerable<T> {
         final PersistentList<T> entries;
         final int pivot;
         final int balanceFactor;
-        final int weight;
+        final int depth;
         final int valueCount;
 
         Node(Node<T> left, Node<T> right, PersistentList<T> entries, int pivot) {
@@ -305,8 +300,8 @@ public class PersistentSet<T> implements Enumerable<T> {
             this.right = right;
             this.entries = entries;
             this.pivot = pivot;
-            weight = weightOf(left) + weightOf(right) + 1;
-            balanceFactor = weightOf(left) + weightOf(right);
+            depth = Math.max(heightOf(left), heightOf(right)) + 1;
+            balanceFactor = heightOf(right) - heightOf(left);
             valueCount = valueCountOf(left) + valueCountOf(right) + entries.size();
         }
 
@@ -331,6 +326,11 @@ public class PersistentSet<T> implements Enumerable<T> {
 
     public Iterator<T> reversedIterator() {
         return new ReversedEnumeratorIterator<>(enumerator(true));
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        return Spliterators.spliterator(iterator(), size(), Spliterator.IMMUTABLE | Spliterator.DISTINCT);
     }
 
     private static class NodeEnumerator<T> implements BiDirectionalEnumerator<Node<T>> {

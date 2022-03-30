@@ -388,11 +388,18 @@ public class PersistentList<T> implements List<T> {
         return null;
     }
 
-    public PersistentList<T> replaceFirstOccurence(T item) {
+    public PersistentList<T> replaceFirstOccurrence(T item) {
         if (item == null) return this;
         final var result = replaceFirstOccurrence(root, item);
         if (result == null) return this;
         return new PersistentList<>(result);
+    }
+
+    public PersistentList<T> replaceFirstOccurenceOrAppend(T item) {
+        if (item == null && contains(item)) return this;
+        final var replacementAttempt = replaceFirstOccurrence(root, item);
+        if (replacementAttempt != null) return new PersistentList<>(replacementAttempt);
+        return put(item);
     }
 
     // ============================== private utilities =================================

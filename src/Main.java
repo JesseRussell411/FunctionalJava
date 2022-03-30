@@ -11,6 +11,35 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+class Intbh {
+    public final int value;
+
+    public Intbh(int value) {
+        this.value = value;
+    }
+
+    public Intbh() {
+        this(0);
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
+    @Override
+    public int hashCode() {
+        return value % 10;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Intbh other) {
+            return value == other.value;
+        } else return false;
+    }
+}
+
 public class Main {
     static String iterString(Iterator<?> iter, String delim) {
         StringBuilder s = new StringBuilder();
@@ -263,19 +292,9 @@ public class Main {
         System.out.println("fib of null: " + memoFib.apply(null));
         System.out.println("fib of null: " + memoFib.apply(null));
 
-
-        var ps = new PersistentSet<Integer>();
-        ps = ps.with(9).with(9).with(9).with(5).with(90).with(10);
-        print(ps);
-        System.out.println(ps.contains(9));
-        System.out.println(ps.contains(12));
-        System.out.println(ps.without(9).contains(9));
-        print(ps.without(9));
-        ps = ps.withMany(randInts(1000, 100));
+        final var ps = new PersistentSet<>().withMany(randInts(1000, 100).map(Intbh::new));
 
         print(ps, "\n");
-        print("==========================");
-        print(ps.reversedIterator(), "\n");
 
 
         try (final var input = new Scanner(System.in)) {
