@@ -4,24 +4,29 @@ import collections.iteration.ArrayIterator;
 import collections.iteration.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
+import reference.Pointer;
 
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Stream;
+//TODO extract out to persistentTreeSet<T extends Comparable<T>> and back this with that. Use a wrapper type that compares its values by their hash codes.
 
 public class PersistentSet<T> implements Enumerable<T> {
     private final Node<T> root;
+    private final int size;
 
-    private PersistentSet(Node<T> root) {
+    private PersistentSet(Node<T> root, int size) {
         this.root = root;
+        this.size = size;
     }
 
     public PersistentSet() {
         root = null;
+        size = 0;
     }
 
     public int size() {
-        return valueCountOf(root);
+        return size;
     }
 
     public boolean containsAny(Iterator<T> valueIterator) {
@@ -104,29 +109,33 @@ public class PersistentSet<T> implements Enumerable<T> {
 
 
     public PersistentSet<T> with(T value) {
-        return with(root, value, Objects.hashCode(value)).wrap();
+        final var size = new Pointer<>(size());
+        return with(root, value, Objects.hashCode(value), size).wrap(size.current);
     }
 
-    private static <T> Node<T> with(Node<T> n, T value, int hash) {
+    private static <T> Node<T> with(Node<T> n, T value, int hash, Pointer<Integer> size) {
         if (n == null) {
+            size.current += 1;
             return new Node<>(null, null, PersistentList.of(value), hash);
         } else if (hash < n.pivot) {
             return new Node<>(
-                    with(n.left, value, hash),
+                    with(n.left, value, hash, size),
                     n.right,
                     n.entries,
                     n.pivot).balanced();
         } else if (hash > n.pivot) {
             return new Node<>(
                     n.left,
-                    with(n.right, value, hash),
+                    with(n.right, value, hash, size),
                     n.entries,
                     n.pivot).balanced();
         } else {
+            final var newEntries = n.entries.replaceFirstOccurenceOrAppend(value);
+            size.current += newEntries.size() - n.entries.size();
             return new Node<>(
                     n.left,
                     n.right,
-                    n.entries.replaceFirstOccurenceOrAppend(value),
+                    newEntries,
                     n.pivot).balanced();
         }
     }
@@ -170,28 +179,30 @@ public class PersistentSet<T> implements Enumerable<T> {
     }
 
     public PersistentSet<T> without(T value) {
-        final var result = without(root, value, Objects.hashCode(value));
-        if (result == null) {
+        final var aborted = new Pointer<>(false);
+        final var result = without(root, value, Objects.hashCode(value), aborted);
+        if (aborted.current) {
             return this;
         } else {
-            return result.wrap();
+            return new PersistentSet<>(result, size() - 1);
         }
     }
 
 
-    public static <T> Node<T> without(Node<T> n, T value, int hash) {
+    public static <T> Node<T> without(Node<T> n, T value, int hash, Pointer<Boolean> abort) {
         if (n == null) {
+            abort.current = true;
             return null;
         } else if (hash < n.pivot) {
-            final var leftResult = without(n.left, value, hash);
-            if (leftResult == null) {
+            final var leftResult = without(n.left, value, hash, abort);
+            if (abort.current) {
                 return null;
             } else {
                 return new Node<>(leftResult, n.right, n.entries, n.pivot).balanced();
             }
         } else if (hash > n.pivot) {
-            final var rightResult = without(n.right, value, hash);
-            if (rightResult == null) {
+            final var rightResult = without(n.right, value, hash, abort);
+            if (abort.current) {
                 return null;
             } else {
                 return new Node<>(n.left, rightResult, n.entries, n.pivot).balanced();
@@ -199,6 +210,9 @@ public class PersistentSet<T> implements Enumerable<T> {
         } else {
             final var entriesWithout = n.entries.withoutFirstOccurrence(value);
             if (entriesWithout.size() == n.entries.size()) {
+                abort.current = true;
+                return null;
+            } else if (entriesWithout.size() == 0) {
                 return null;
             } else {
                 return new Node<>(n.left, n.right, entriesWithout, n.pivot).balanced();
@@ -263,7 +277,7 @@ public class PersistentSet<T> implements Enumerable<T> {
         } else return n;
     }
 
-    static int heightOf(Node<?> n) {
+    static byte depthOf(Node<?> n) {
         if (n == null) {
             return 0;
         } else {
@@ -279,35 +293,25 @@ public class PersistentSet<T> implements Enumerable<T> {
         }
     }
 
-    static int valueCountOf(Node<?> n) {
-        if (n == null) {
-            return 0;
-        } else {
-            return n.valueCount;
-        }
-    }
-
     private static class Node<T> {
         final Node<T> left;
         final Node<T> right;
         final PersistentList<T> entries;
         final int pivot;
-        final int balanceFactor;
-        final int depth;
-        final int valueCount;
+        final byte balanceFactor;
+        final byte depth;
 
         Node(Node<T> left, Node<T> right, PersistentList<T> entries, int pivot) {
             this.left = left;
             this.right = right;
             this.entries = entries;
             this.pivot = pivot;
-            depth = Math.max(heightOf(left), heightOf(right)) + 1;
-            balanceFactor = heightOf(right) - heightOf(left);
-            valueCount = valueCountOf(left) + valueCountOf(right) + entries.size();
+            depth = (byte) (Math.max(depthOf(left), depthOf(right)) + 1);
+            balanceFactor = (byte) (depthOf(right) - depthOf(left));
         }
 
-        PersistentSet<T> wrap() {
-            return new PersistentSet<>(this);
+        PersistentSet<T> wrap(int size) {
+            return new PersistentSet<>(this, size);
         }
 
         Node<T> balanced() {

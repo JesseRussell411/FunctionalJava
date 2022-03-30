@@ -1,8 +1,7 @@
-import collections.ListRecord;
 import collections.PersistentSet;
 import collections.wrappers.ArrayAsList;
 import collections.PersistentList;
-import collections.wrappers.PersistentMap;
+import collections.PersistentMap;
 import concurrency.Promise;
 import memoization.pure.MemoizedBiFunction;
 import memoization.pure.MemoizedFunction;
@@ -299,10 +298,13 @@ public class Main {
 
         var pm = new PersistentMap<String, String>();
         pm = pm.with("nine", "9").with("ten", "10").with("one", "1");
+        print("1:" + pm.size());
         pm = pm.with("five", "9");
+        print("2:" + pm.size());
         final var wrongPM = pm;
         print(pm.get("five"));
         pm = pm.with("five", "5");
+        print("3:" + pm.size());
         print(pm.get("five"));
         print(pm.get("nine"));
 
@@ -312,6 +314,10 @@ public class Main {
         print(pm.without("five").get("five"));
         print(pm.without("five").containsKey("five"));
         print(pm.containsKey("five"));
+        print(pm.size());
+        print(pm.with("six", "6").size());
+        print(pm.without("nine").size());
+        print(pm.with("nine", "3^3").size());
 
 
         try (final var input = new Scanner(System.in)) {

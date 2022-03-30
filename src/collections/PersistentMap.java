@@ -1,6 +1,4 @@
-package collections.wrappers;
-
-import collections.PersistentSet;
+package collections;
 
 import java.util.Objects;
 
@@ -15,13 +13,17 @@ public class PersistentMap<K, V> {
         this.entries = entries;
     }
 
+    public int size() {
+        return entries.size();
+    }
+
     public PersistentMap<K, V> with(K key, V value) {
         return new PersistentMap<>(entries.with(new Entry<>(key, value)));
     }
 
     public PersistentMap<K, V> without(K key) {
         final var result = entries.without(new Entry<>(key, null));
-        
+
         if (result.size() != entries.size()) {
             return new PersistentMap<>(result);
         } else return this;
