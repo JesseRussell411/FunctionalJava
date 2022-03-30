@@ -5,6 +5,7 @@ import collections.iteration.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -189,7 +190,7 @@ public class PersistentSet<T> implements Enumerable<T> {
                 return new Node<>(leftResult, n.right, n.entries, n.pivot).balanced();
             }
         } else if (hash > n.pivot) {
-            final var rightResult = without(n.left, value, hash);
+            final var rightResult = without(n.right, value, hash);
             if (rightResult == null) {
                 return null;
             } else {
@@ -472,5 +473,38 @@ public class PersistentSet<T> implements Enumerable<T> {
             if (localEnumerator == null) throw new NoSuchElementException();
             return localEnumerator.current();
         }
+    }
+
+    public Object[] toArray() {
+        final var result = new Object[size()];
+        int i = 0;
+        for (final var value : this) {
+            result[i++] = value;
+        }
+
+        return result;
+    }
+
+    public <T1> T1[] toArray(T1[] a) {
+        Objects.requireNonNull(a);
+        final T1[] result = (a.length >= size())
+                ? a
+                : (T1[]) Array.newInstance(a.getClass().componentType(), size());
+
+        int index = 0;
+
+        // copy list contents
+        for (final var item : this) {
+            if (index < result.length) {
+                ((Object[]) result)[index++] = item;
+            } else break;
+        }
+
+        // pad with null
+        while (index < result.length) {
+            result[index++] = null;
+        }
+
+        return result;
     }
 }

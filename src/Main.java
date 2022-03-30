@@ -2,6 +2,7 @@ import collections.ListRecord;
 import collections.PersistentSet;
 import collections.wrappers.ArrayAsList;
 import collections.PersistentList;
+import collections.wrappers.PersistentMap;
 import concurrency.Promise;
 import memoization.pure.MemoizedBiFunction;
 import memoization.pure.MemoizedFunction;
@@ -295,6 +296,22 @@ public class Main {
         final var ps = new PersistentSet<>().withMany(randInts(1000, 100).map(Intbh::new));
 
         print(ps, "\n");
+
+        var pm = new PersistentMap<String, String>();
+        pm = pm.with("nine", "9").with("ten", "10").with("one", "1");
+        pm = pm.with("five", "9");
+        final var wrongPM = pm;
+        print(pm.get("five"));
+        pm = pm.with("five", "5");
+        print(pm.get("five"));
+        print(pm.get("nine"));
+
+
+        print();
+        print(wrongPM.get("five"));
+        print(pm.without("five").get("five"));
+        print(pm.without("five").containsKey("five"));
+        print(pm.containsKey("five"));
 
 
         try (final var input = new Scanner(System.in)) {
