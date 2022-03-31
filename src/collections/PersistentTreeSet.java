@@ -110,6 +110,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
     }
 
     public PersistentTreeSet<T> with(T value) {
+        Objects.requireNonNull(value);
         // TODO add abort on duplicate instance
         final var size = new Pointer<>(size());
         return with(root, value, size).wrap(size.current);
@@ -362,7 +363,10 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
 
     @Override
     public Spliterator<T> spliterator() {
-        return Spliterators.spliterator(iterator(), size(), Spliterator.IMMUTABLE | Spliterator.DISTINCT | Spliterator.SORTED);
+        return Spliterators.spliterator(
+                iterator(),
+                size(),
+                Spliterator.IMMUTABLE | Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.NONNULL);
     }
 
     public Stream<T> stream(boolean parallel) {

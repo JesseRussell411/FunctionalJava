@@ -5,10 +5,9 @@ import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
 import collections.iteration.enumerator.Enumerator;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 //TODO extract out to persistentTreeSet<T extends Comparable<T>> and back this with that. Use a wrapper type that compares its values by their hash codes.
 
 public class PersistentSet<T> implements Enumerable<T> {
@@ -32,6 +31,19 @@ public class PersistentSet<T> implements Enumerable<T> {
     @Override
     public BiDirectionalEnumerator<T> enumerator() {
         return enumerator(false);
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        return Spliterators.spliterator(iterator(), size, Spliterator.IMMUTABLE | Spliterator.DISTINCT);
+    }
+
+    public Stream<T> stream(boolean parallel) {
+        return StreamSupport.stream(this.spliterator(), parallel);
+    }
+
+    public Stream<T> stream() {
+        return stream(true);
     }
 
     public BiDirectionalEnumerator<T> enumerator(boolean startAtEnd) {
