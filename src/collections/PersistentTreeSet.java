@@ -8,6 +8,7 @@ import reference.Pointer;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -108,7 +109,6 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
         return withMany(new ArrayIterator<>(values));
     }
 
-
     public PersistentTreeSet<T> with(T value) {
         // TODO add abort on duplicate instance
         final var size = new Pointer<>(size());
@@ -188,7 +188,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
     }
 
 
-    public static <T extends Comparable<T>> Node<T> without(Node<T> n, T value, Pointer<Boolean> abort) {
+    private static <T extends Comparable<T>> Node<T> without(Node<T> n, T value, Pointer<Boolean> abort) {
         if (n == null) {
             abort.current = true;
             return null;
@@ -207,23 +207,27 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
                 return new Node<>(n.left, rightResult, n.entry).balanced();
             }
         } else {
-            if (n.left == null && n.right == null) {
-                // === no children ===
-                return null;
-            } else if (n.left == null) {
-                // === one right child ===
-                return n.right;
-            } else if (n.right == null) {
-                // === one left child ===
-                return n.left;
-            } else {
-                // === two children ===
-                // replace the value at this node with the largest value relative to it
-                // by moving that value to this node.
-                final var relativeLargest_ref = new Pointer<Node<T>>();
-                final var newRight = extractLargestRelativeTo(n.right, relativeLargest_ref);
-                return new Node<>(n.left, newRight, relativeLargest_ref.current.entry);
-            }
+            return removed(n);
+        }
+    }
+
+    private static <T extends Comparable<T>> Node<T> removed(Node<T> n) {
+        if (n.left == null && n.right == null) {
+            // === no children ===
+            return null;
+        } else if (n.left == null) {
+            // === one right child ===
+            return n.right;
+        } else if (n.right == null) {
+            // === one left child ===
+            return n.left;
+        } else {
+            // === two children ===
+            // replace the value at this node with the largest value relative to its left child
+            // by moving that value to this node.
+            final var relativeLargest_ref = new Pointer<Node<T>>();
+            final var newRight = extractLargestRelativeTo(n.right, relativeLargest_ref);
+            return new Node<>(n.left, newRight, relativeLargest_ref.current.entry);
         }
     }
 
@@ -235,7 +239,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
                     n.entry);
         } else {
             extracted.current = n;
-            return null;
+            return n.right;
         }
     }
 
@@ -247,7 +251,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
                     n.entry);
         } else {
             extracted.current = n;
-            return null;
+            return n.left;
         }
     }
 
