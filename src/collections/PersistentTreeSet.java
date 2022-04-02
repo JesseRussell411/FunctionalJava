@@ -8,10 +8,9 @@ import reference.Pointer;
 
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.Function;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 
 public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T> {
     private final Node<T> root;
@@ -20,11 +19,11 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
     private PersistentTreeSet(Node<T> root, int size) {
         this.root = root;
         this.size = size;
+        assert Assertions.correctSize(this);
     }
 
     public PersistentTreeSet() {
-        root = null;
-        size = 0;
+        this(null, 0);
     }
 
     public int size() {
@@ -113,7 +112,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
         Objects.requireNonNull(value);
         // TODO add abort on duplicate instance
         final var size = new Pointer<>(size());
-        return with(root, value, size).wrap(size.current);
+        return Assertions.assert_CorrectSize(with(root, value, size).wrap(size.current));
     }
 
     private static <T extends Comparable<T>> Node<T> with(Node<T> n, T value, Pointer<Integer> size) {
@@ -131,7 +130,6 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
                     with(n.right, value, size),
                     n.entry).balanced();
         } else {
-            // TODO add abort on duplicate instance
             return new Node<>(
                     n.left,
                     n.right,
@@ -163,7 +161,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
             result = result.without(valueIterator.next());
         }
 
-        return result;
+        return Assertions.assert_CorrectSize(result);
     }
 
     public PersistentTreeSet<T> withoutMany(Stream<T> values) {
@@ -179,6 +177,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
     }
 
     public PersistentTreeSet<T> without(T value) {
+        Objects.requireNonNull(value);
         final var aborted = new Pointer<>(false);
         final var result = without(root, value, aborted);
         if (aborted.current) {
@@ -331,6 +330,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
         final byte depth;
 
         Node(Node<T> left, Node<T> right, T entry) {
+            assert entry != null;
             this.left = left;
             this.right = right;
             this.entry = entry;
@@ -527,5 +527,28 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
         }
 
         return result;
+    }
+
+    private static class Assertions {
+        static <T extends Comparable<T>> int actualSize(Node<T> n) {
+            if (n == null) return 0;
+
+            int totalSize = 1;
+            totalSize += actualSize(n.left);
+            totalSize += actualSize(n.right);
+
+            return totalSize;
+        }
+
+        static <T extends Comparable<T>> boolean correctSize(PersistentTreeSet<T> set) {
+            Objects.requireNonNull(set);
+            return set.size() == actualSize(set.root);
+        }
+
+        static <T extends Comparable<T>> PersistentTreeSet<T> assert_CorrectSize(PersistentTreeSet<T> set) {
+            assert correctSize(set);
+            return set;
+        }
+
     }
 }

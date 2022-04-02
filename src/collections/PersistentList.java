@@ -380,7 +380,7 @@ public class PersistentList<T> implements List<T> {
         }
     }
 
-    public T getFirstOccurence(T item) {
+    public T getFirstOccurrence(T item) {
         if (item == null) return null;
         for (final var thisItem : this) {
             if (Objects.equals(item, thisItem)) return thisItem;
@@ -388,15 +388,20 @@ public class PersistentList<T> implements List<T> {
         return null;
     }
 
-    public PersistentList<T> replaceFirstOccurrence(T item) {
+    public PersistentList<T> withFirstOccurrenceReplaced(T item) {
         if (item == null) return this;
         final var result = replaceFirstOccurrence(root, item);
         if (result == null) return this;
         return new PersistentList<>(result);
     }
 
-    public PersistentList<T> replaceFirstOccurenceOrAppend(T item) {
-        if (item == null && contains(item)) return this;
+    /**
+     * Either replaces the first occurrence of the item or appends the item at the end.
+     *
+     * @return A copy of the list with the first occurrence of a matching item (as determined by Object.equals()) replaced with the item given or the item appended to the end if it did not occur.
+     */
+    public PersistentList<T> replaceOrPut(T item) {
+        if (item == null && contains(null)) return this;
         final var replacementAttempt = replaceFirstOccurrence(root, item);
         if (replacementAttempt != null) return new PersistentList<>(replacementAttempt);
         return put(item);

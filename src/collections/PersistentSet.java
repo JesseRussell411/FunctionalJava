@@ -3,12 +3,10 @@ package collections;
 import collections.iteration.ArrayIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
-import collections.iteration.enumerator.Enumerator;
 
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-//TODO extract out to persistentTreeSet<T extends Comparable<T>> and back this with that. Use a wrapper type that compares its values by their hash codes.
 
 public class PersistentSet<T> implements Enumerable<T> {
     private final PersistentTreeSet<Entry<T>> entries;
@@ -17,15 +15,21 @@ public class PersistentSet<T> implements Enumerable<T> {
     private PersistentSet(PersistentTreeSet<Entry<T>> entries, int size) {
         this.entries = entries;
         this.size = size;
+        assert entries != null;
+        assert Assertions.correctSize(this);
     }
 
     public PersistentSet() {
-        entries = new PersistentTreeSet<>();
-        size = 0;
+        this(new PersistentTreeSet<>(), 0);
     }
 
     public int size() {
         return size;
+    }
+
+    public boolean contains(T value) {
+        final var entry = getEntry(Objects.hashCode(value));
+        return entry != null && entry.values.contains(value);
     }
 
     @Override
@@ -57,7 +61,7 @@ public class PersistentSet<T> implements Enumerable<T> {
     public T get(T value) {
         final var entry = getEntry(Objects.hashCode(value));
         if (entry != null) {
-            return entry.values.getFirstOccurence(value);
+            return entry.values.getFirstOccurrence(value);
         } else return null;
     }
 
@@ -137,15 +141,16 @@ public class PersistentSet<T> implements Enumerable<T> {
 
     private static class Entry<T> implements Comparable<Entry<T>> {
         final int key;
-        PersistentList<T> values;
+        final PersistentList<T> values;
 
         public Entry(int key, PersistentList<T> values) {
             this.key = key;
             this.values = values;
+            assert this.values != null;
         }
 
         Entry<T> with(T value) {
-            return new Entry<>(key, values.replaceFirstOccurenceOrAppend(value));
+            return new Entry<>(key, values.replaceOrPut(value));
         }
 
         Entry<T> without(T value) {
@@ -209,6 +214,20 @@ public class PersistentSet<T> implements Enumerable<T> {
         public T current() {
             if (localEnumerator == null) throw new NoSuchElementException();
             return localEnumerator.current();
+        }
+    }
+
+    static class Assertions {
+        static <T> int actualSize(PersistentTreeSet<Entry<T>> entries) {
+            int totalSize = 0;
+            for (final var entry : entries) {
+                totalSize += entry.values.size();
+            }
+            return totalSize;
+        }
+
+        static <T> boolean correctSize(PersistentSet<T> set) {
+            return set.size() == actualSize(set.entries);
         }
     }
 }
