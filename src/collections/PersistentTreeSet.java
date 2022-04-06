@@ -1,6 +1,8 @@
 package collections;
 
+import annotations.UnsupportedOperation;
 import collections.iteration.ArrayIterator;
+import collections.iteration.EnumeratorIterator;
 import collections.iteration.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
@@ -9,10 +11,11 @@ import reference.Pointer;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T> {
+public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enumerable<T> {
     private final Node<T> root;
     private final int size;
 
@@ -28,6 +31,11 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
 
     public int size() {
         return size;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return size() == 0;
     }
 
     public boolean containsAny(Iterator<T> valueIterator) {
@@ -68,21 +76,21 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
         return containsAll(new ArrayIterator<>(values));
     }
 
-
-    public boolean contains(T value) {
-        Objects.requireNonNull(value);
-        return contains(root, value);
+    @Override
+    public boolean containsAll(Collection<?> values) {
+        for (final var value : values) {
+            if (!contains(value)) return false;
+        }
+        return true;
     }
 
-    private boolean contains(Node<T> n, T value) {
-        if (n == null) {
+    @Override
+    public boolean contains(Object o) {
+        Objects.requireNonNull(o);
+        try {
+            return get((T) o) != null;
+        } catch (ClassCastException cce) {
             return false;
-        } else if (value.compareTo(n.entry) < 0) {
-            return contains(n.left, value);
-        } else if (value.compareTo(n.entry) > 0) {
-            return contains(n.right, value);
-        } else {
-            return Objects.equals(value, n.entry);
         }
     }
 
@@ -139,16 +147,16 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
 
     public T get(T value) {
         Objects.requireNonNull(value);
-        return get(root, value, Objects.hashCode(value));
+        return get(root, value);
     }
 
-    private static <T extends Comparable<T>> T get(Node<T> n, T value, int hash) {
+    private static <T extends Comparable<T>> T get(Node<T> n, T value) {
         if (n == null) {
             return null;
         } else if (value.compareTo(n.entry) < 0) {
-            return get(n.left, value, hash);
+            return get(n.left, value);
         } else if (value.compareTo(n.entry) > 0) {
-            return get(n.right, value, hash);
+            return get(n.right, value);
         } else {
             return n.entry;
         }
@@ -362,6 +370,11 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
     }
 
     @Override
+    public Iterator<T> iterator() {
+        return new EnumeratorIterator<>(enumerator());
+    }
+
+    @Override
     public Spliterator<T> spliterator() {
         return Spliterators.spliterator(
                 iterator(),
@@ -496,6 +509,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
         }
     }
 
+    @Override
     public Object[] toArray() {
         final var result = new Object[size()];
         int i = 0;
@@ -506,27 +520,9 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
         return result;
     }
 
+    @Override
     public <T1> T1[] toArray(T1[] a) {
-        Objects.requireNonNull(a);
-        final T1[] result = (a.length >= size())
-                ? a
-                : (T1[]) Array.newInstance(a.getClass().componentType(), size());
-
-        int index = 0;
-
-        // copy list contents
-        for (final var item : this) {
-            if (index < result.length) {
-                ((Object[]) result)[index++] = item;
-            } else break;
-        }
-
-        // pad with null
-        while (index < result.length) {
-            result[index++] = null;
-        }
-
-        return result;
+        return CollectionUtils.toArray(this, a);
     }
 
     private static class Assertions {
@@ -550,5 +546,42 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Enumerable<T>
             return set;
         }
 
+    }
+
+    // unsupported interface methods
+    @Override
+    @UnsupportedOperation
+    public boolean add(T t) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @UnsupportedOperation
+    public boolean remove(Object o) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @UnsupportedOperation
+    public boolean addAll(Collection<? extends T> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @UnsupportedOperation
+    public boolean retainAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @UnsupportedOperation
+    public boolean removeAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @UnsupportedOperation
+    public void clear() {
+        throw new UnsupportedOperationException();
     }
 }

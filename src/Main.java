@@ -11,6 +11,8 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 
 class Intbh {
     public final int value;
@@ -42,6 +44,41 @@ class Intbh {
 }
 
 public class Main {
+    static <T> ArrayList<T> repeat(ArrayList<T> list, int times) {
+        if (times == 2) {
+            final var resultSize = list.size() * 2;
+            final var result = new ArrayList<T>(resultSize);
+            for (int i = 0; i < resultSize; i++) {
+                result.add(list.get(i % list.size()));
+            }
+            return result;
+        }
+        if (times == 1) return list;
+        if (times == 0) return new ArrayList<>(0);
+
+        final var quotient = times / 2;
+        final var remainder = times % 2;
+        final var resultSize = list.size() * times;
+        final var result = new ArrayList<T>(resultSize);
+        final var repeatedByQuotient = repeat(list, quotient);
+        final var repeatedByRemainder = repeat(list, remainder);
+
+        int i = 0;
+        final var preRemainderSize = resultSize - repeatedByRemainder.size();
+        if (repeatedByQuotient.size() != 0) {
+            for (; i < preRemainderSize; i++) {
+                result.add(repeatedByQuotient.get(i % repeatedByQuotient.size()));
+            }
+        }
+        if (repeatedByRemainder.size() != 0) {
+            for (; i < resultSize; i++) {
+                result.add(repeatedByRemainder.get(i - preRemainderSize));
+            }
+        }
+
+        return result;
+    }
+
     static String iterString(Iterator<?> iter, String delim) {
         StringBuilder s = new StringBuilder();
 
@@ -324,6 +361,29 @@ public class Main {
         pts = pts.withMany(randInts(1000, 10));
 
         print(pts.stream().sorted().iterator(), "\n");
+
+        final var somelist = PersistentList.of(1, 2, 3, 4, 5);
+        print(somelist.repeat(4));
+        print(somelist.repeat(-4));
+        start = System.currentTimeMillis();
+        final var repeatedALot = somelist.repeat(40_000_000);
+        stop = System.currentTimeMillis();
+        print("repeating took:" + (stop - start) + "ms");
+
+//        final var someArrayList = new ArrayList<>(5);
+//        someArrayList.add(1);
+//        someArrayList.add(2);
+//        someArrayList.add(3);
+//        someArrayList.add(4);
+//        someArrayList.add(5);
+//        start = System.currentTimeMillis();
+//        final var someArrayListRepeatedALot = repeat(someArrayList, 40_000_000);
+//        stop = System.currentTimeMillis();
+//        print("repeating AR took:" + (stop - start) + "ms");
+
+
+//        final var leafs = StreamSupport.stream(Spliterators.<PersistentList.Leaf>spliteratorUnknownSize(repeatedALot.getLeafs(), 0), true).toArray();
+//        final var items = StreamSupport.stream(Spliterators.<PersistentList.Leaf>spliteratorUnknownSize(repeatedALot.getLeafs(), 0), true).map(lff -> lff.items).toArray();
 
 
         try (final var input = new Scanner(System.in)) {

@@ -60,18 +60,7 @@ public class ListRecord<T> implements Iterable<T> {
         if (isEmpty() && other.isEmpty()) return true;
         if (size() != other.size()) return false;
 
-        if (lazyHash.isCached() && hashCode() != other.hashCode()) {
-            return false;
-        } else {
-            final var hashCodePromise = Concurrency.threadedCall(lazyHash);
-            final var otherHash = other.hashCode();
-            try {
-                final var thisHash = hashCodePromise.join();
-                if (!Objects.equals(thisHash, otherHash)) return false;
-            } catch (Throwable e) {
-            }
-        }
-
+        if (hashCode() != other.hashCode()) return false;
 
         final var iter = iterator();
         final var otherIter = other.iterator();

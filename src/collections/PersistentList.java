@@ -1,10 +1,7 @@
 package collections;
 
 import annotations.UnsupportedOperation;
-import collections.iteration.ArrayIterator;
-import collections.iteration.IterableUtils;
-import collections.iteration.ListEnumeratorIterator;
-import collections.iteration.ReversedEnumeratorIterator;
+import collections.iteration.*;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.Enumerator;
 import collections.iteration.enumerator.IndexedBiDirectionalEnumerator;
@@ -407,6 +404,37 @@ public class PersistentList<T> implements List<T> {
         return put(item);
     }
 
+    public PersistentList<T> reversed() {
+        return new PersistentList<>(reversedIterator());
+    }
+
+    public PersistentList<T> concat(PersistentList<T> other) {
+        return this.withInsertion(size(), other);
+    }
+
+    public PersistentList<T> repeat(int times) {
+        // break factor cannot be less than 2. Any value >= 2 is ok.
+        final int BREAK_FACTOR = 2;
+
+        if (times < 0) return reversed().repeat(-times);
+        if (times == 1) return this;
+        if (times == 0) return new PersistentList<>();
+
+        if (times <= BREAK_FACTOR) {
+            var result = this;
+            for (int i = 1; i < times; ++i) {
+                result = result.concat(this);
+            }
+            return result;
+        }
+
+        final var factor = times / BREAK_FACTOR;
+        final var remainder = times % BREAK_FACTOR;
+        final var repeatedByFactor = this.repeat(factor);
+        return repeatedByFactor.repeat(BREAK_FACTOR).concat(this.repeat(remainder));
+    }
+
+
     // ============================== private utilities =================================
     private static Object get(int index, Node root) {
         if (root instanceof Branch branch) {
@@ -501,7 +529,7 @@ public class PersistentList<T> implements List<T> {
                     : items;
 
             return index > 0
-                    ? withInsertion(0, new ArrayIterator<>(leaf.items, index), withProceeding)
+                    ? withInsertion(0, new ArrayIterator<>(leaf.items, 0, index), withProceeding)
                     : withProceeding;
         } else throw new IllegalStateException();
     }
@@ -685,7 +713,7 @@ public class PersistentList<T> implements List<T> {
     private static Branch balanced(Branch branch) {
         Branch result = branch;
 
-        for (int loopCount = 0; loopCount < branch.nodeCount(); ++loopCount) {
+        for (int loopCount = 0; loopCount < branch.depth(); ++loopCount) {
             if (result.balanceFactor() < -1) {
                 final var rotatedRight = rotatedRight(branch);
                 if (rotatedRight.absoluteBalanceFactor() < result.absoluteBalanceFactor()) {
@@ -768,8 +796,6 @@ public class PersistentList<T> implements List<T> {
 
     // ========================= inner classes ====================================
     private interface Node extends Enumerable<Object> {
-        int nodeCount();
-
         int itemCount();
 
         int leafCount();
@@ -791,7 +817,6 @@ public class PersistentList<T> implements List<T> {
     private static class Branch implements Node {
         final Node left;
         final Node right;
-        final int nodeCount;
         final int itemCount;
         final int leafCount;
         final int depth;
@@ -800,16 +825,10 @@ public class PersistentList<T> implements List<T> {
         public Branch(Node left, Node right) {
             this.left = left;
             this.right = right;
-            nodeCount = left.nodeCount() + right.nodeCount() + 1;
             itemCount = left.itemCount() + right.itemCount();
             leafCount = left.leafCount() + right.leafCount();
             depth = Math.max(left.depth(), right.depth()) + 1;
             balanceFactor = right.depth() - left.depth();
-        }
-
-        @Override
-        public int nodeCount() {
-            return nodeCount;
         }
 
         @Override
@@ -834,15 +853,10 @@ public class PersistentList<T> implements List<T> {
     }
 
     private static class Leaf implements Node {
-        final Object[] items;
+        public final Object[] items;
 
         public Leaf(Object[] items) {
             this.items = items;
-        }
-
-        @Override
-        public int nodeCount() {
-            return 1;
         }
 
         @Override

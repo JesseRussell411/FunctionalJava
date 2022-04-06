@@ -1,6 +1,7 @@
 package collections;
 
 import collections.iteration.ArrayIterator;
+import collections.iteration.EnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
 
@@ -8,7 +9,7 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class PersistentSet<T> implements Enumerable<T> {
+public class PersistentSet<T> implements Enumerable<T>, Set<T> {
     private final PersistentTreeSet<Entry<T>> entries;
     private final int size;
 
@@ -27,9 +28,33 @@ public class PersistentSet<T> implements Enumerable<T> {
         return size;
     }
 
-    public boolean contains(T value) {
-        final var entry = getEntry(Objects.hashCode(value));
-        return entry != null && entry.values.contains(value);
+    @Override
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
+    @Override
+    public Object[] toArray() {
+        return stream().toArray();
+    }
+
+    @Override
+    public <T1> T1[] toArray(T1[] a) {
+        return CollectionUtils.toArray(this, a);
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        for (final var value : c) {
+            if (!contains(value)) return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean contains(Object o) {
+        final var entry = getEntry(Objects.hashCode(o));
+        return entry != null && entry.values.contains(o);
     }
 
     @Override
@@ -40,6 +65,11 @@ public class PersistentSet<T> implements Enumerable<T> {
     @Override
     public Spliterator<T> spliterator() {
         return Spliterators.spliterator(iterator(), size, Spliterator.IMMUTABLE | Spliterator.DISTINCT);
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new EnumeratorIterator<>(enumerator());
     }
 
     public Stream<T> stream(boolean parallel) {
@@ -229,5 +259,36 @@ public class PersistentSet<T> implements Enumerable<T> {
         static <T> boolean correctSize(PersistentSet<T> set) {
             return set.size() == actualSize(set.entries);
         }
+    }
+
+    // unsupported interface methods
+    @Override
+    public boolean add(T t) {
+        return false;
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        return false;
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends T> c) {
+        return false;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public void clear() {
+
     }
 }
