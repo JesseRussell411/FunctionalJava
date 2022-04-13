@@ -1,7 +1,8 @@
-package collections;
+package collections.persistent;
 
-import collections.iteration.ArrayIterator;
-import collections.iteration.EnumeratorIterator;
+import collections.CollectionUtils;
+import collections.iteration.adapters.ArrayIterator;
+import collections.iteration.adapters.EnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
 

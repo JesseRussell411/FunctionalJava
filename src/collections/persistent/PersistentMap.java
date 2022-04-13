@@ -1,4 +1,4 @@
-package collections;
+package collections.persistent;
 
 import annotations.UnsupportedOperation;
 

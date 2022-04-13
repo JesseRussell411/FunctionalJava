@@ -1,6 +1,6 @@
 package collections.iteration.enumerable;
 
-import collections.iteration.EnumeratorIterator;
+import collections.iteration.adapters.EnumeratorIterator;
 import collections.iteration.enumerator.Enumerator;
 
 import java.util.Iterator;

@@ -1,6 +1,6 @@
 package collections.records;
 
-import collections.PersistentMap;
+import collections.persistent.PersistentMap;
 import memoization.pure.Lazy;
 import memoization.pure.WeakLazy;
 

@@ -1,17 +1,15 @@
-package collections;
+package collections.persistent;
 
 import annotations.UnsupportedOperation;
-import collections.iteration.ArrayIterator;
-import collections.iteration.EnumeratorIterator;
-import collections.iteration.ReversedEnumeratorIterator;
+import collections.CollectionUtils;
+import collections.iteration.adapters.ArrayIterator;
+import collections.iteration.adapters.EnumeratorIterator;
+import collections.iteration.adapters.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
 import reference.Pointer;
 
-import java.lang.reflect.Array;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 

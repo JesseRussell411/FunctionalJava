@@ -1,4 +1,4 @@
-package collections.iteration;
+package collections.iteration.adapters;
 
 import utils.ArrayUtils;
 

@@ -1,15 +1,15 @@
-package collections;
+package collections.persistent;
 
 import annotations.UnsupportedOperation;
-import collections.iteration.ArrayIterator;
+import collections.iteration.adapters.ArrayIterator;
 import collections.iteration.IterableUtils;
-import collections.iteration.ListEnumeratorIterator;
-import collections.iteration.ReversedEnumeratorIterator;
+import collections.iteration.adapters.ListEnumeratorIterator;
+import collections.iteration.adapters.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.Enumerator;
 import collections.iteration.enumerator.IndexedBiDirectionalEnumerator;
 import collections.records.ListRecord;
-import collections.wrappers.ArrayAsList;
+import collections.adapters.ArrayAsList;
 import utils.ArrayUtils;
 
 import java.lang.reflect.Array;

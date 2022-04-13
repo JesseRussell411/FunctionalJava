@@ -23,11 +23,11 @@ public class IterableUtils {
     }
 
     public static <T> Iterable<T> merge(Iterable<T> a, Iterable<T> b, Comparator<T> comparator) {
-        return new MergeIterable<>(a, b, comparator);
+        return new MergingIterable<>(a, b, comparator);
     }
 
     public static <T> Iterator<T> merge(Iterator<T> a, Iterator<T> b, Comparator<T> comparator) {
-        return new MergeIterator<>(a, b, comparator);
+        return new MergingIterator<>(a, b, comparator);
     }
 
     public static <T1> T1[] toArray(Collection<?> collection, T1[] a) {

@@ -1,12 +1,7 @@
 package collections;
 
-import collections.iteration.MergeIterable;
-import collections.iteration.MergeIterator;
-
 import java.lang.reflect.Array;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Objects;
 
 public class CollectionUtils {

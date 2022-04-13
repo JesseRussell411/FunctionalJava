@@ -7,14 +7,14 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-public class MergeIterator<T> implements Iterator<T> {
+public class MergingIterator<T> implements Iterator<T> {
     private final Iterator<T> iterA;
     private final Iterator<T> iterB;
     private final Comparator<T> comparator;
     private FinalPointer<T> cacheA;
     private FinalPointer<T> cacheB;
 
-    public MergeIterator(Iterator<T> iterA, Iterator<T> iterB, Comparator<T> comparator) {
+    public MergingIterator(Iterator<T> iterA, Iterator<T> iterB, Comparator<T> comparator) {
         this.iterA = Objects.requireNonNull(iterA);
         this.iterB = Objects.requireNonNull(iterB);
         this.comparator = Objects.requireNonNull(comparator);

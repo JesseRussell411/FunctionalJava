@@ -1,10 +1,10 @@
-import collections.PersistentList;
-import collections.PersistentMap;
-import collections.PersistentSet;
-import collections.PersistentTreeSet;
+import collections.persistent.PersistentList;
+import collections.persistent.PersistentMap;
+import collections.persistent.PersistentSet;
+import collections.persistent.PersistentTreeSet;
 import collections.records.MapRecord;
 import collections.records.SetRecord;
-import collections.wrappers.ArrayAsList;
+import collections.adapters.ArrayAsList;
 import concurrency.Promise;
 import memoization.pure.MemoizedBiFunction;
 import memoization.pure.MemoizedFunction;
