@@ -2,6 +2,7 @@ package collections.records;
 
 import collections.PersistentMap;
 import memoization.pure.Lazy;
+import memoization.pure.WeakLazy;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -55,5 +56,26 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
 
     public Stream<PersistentMap.Entry<K, V>> stream() {
         return entries.stream();
+    }
+
+    private final Supplier<String> lazyToString = new WeakLazy<>(() -> {
+        final var builder = new StringBuilder();
+        final var iter = iterator();
+        builder.append("{ ");
+        if (iter.hasNext()) {
+            final var entry = iter.next();
+            builder.append(entry.getKey()).append(": ").append(entry.getValue());
+        }
+        while (iter.hasNext()) {
+            final var entry = iter.next();
+            builder.append(", ").append(entry.getKey()).append(": ").append(entry.getValue());
+        }
+        builder.append(" }");
+        return builder.toString();
+    });
+
+    @Override
+    public String toString() {
+        return lazyToString.get();
     }
 }

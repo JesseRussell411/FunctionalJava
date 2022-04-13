@@ -2,9 +2,11 @@ package collections.records;
 
 import collections.PersistentList;
 import memoization.pure.Lazy;
+import memoization.pure.WeakLazy;
 
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
@@ -86,5 +88,24 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
 
     public Stream<T> stream() {
         return items.stream();
+    }
+
+    private final Supplier<String> lazyToString = new WeakLazy<>(() -> {
+        final var builder = new StringBuilder();
+        final var iter = iterator();
+
+        builder.append("[ ");
+        if (iter.hasNext()) builder.append(iter.next());
+        while (iter.hasNext()) {
+            builder.append(", ").append(iter.next());
+        }
+        builder.append(" ]");
+        
+        return builder.toString();
+    });
+
+    @Override
+    public String toString() {
+        return lazyToString.get();
     }
 }

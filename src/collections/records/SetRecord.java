@@ -2,6 +2,7 @@ package collections.records;
 
 import collections.PersistentSet;
 import memoization.pure.Lazy;
+import memoization.pure.WeakLazy;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -72,5 +73,24 @@ public class SetRecord<T> implements Iterable<T>, Serializable {
 
     public Stream<T> stream() {
         return values.stream();
+    }
+
+    private final Supplier<String> lazyToString = new WeakLazy<>(() -> {
+        final var builder = new StringBuilder();
+        final var iter = iterator();
+
+        builder.append("{ ");
+        if (iter.hasNext()) builder.append(iter.next());
+        while (iter.hasNext()) {
+            builder.append(", ").append(iter.next());
+        }
+        builder.append(" }");
+
+        return builder.toString();
+    });
+
+    @Override
+    public String toString() {
+        return lazyToString.get();
     }
 }

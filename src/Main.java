@@ -440,28 +440,36 @@ public class Main {
                         .with("address", "extreme!")
                         .with("name", "crazy fred"))));
 
-        print("[");
-        for (final var record : bigStructure) {
-            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
+//        print("[");
+//        for (final var record : bigStructure) {
+//            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
+//
+//        }
+//        print("]");
+//        print();
+//        print();
+//        print();
+//        print("[");
+//        for (final var record : otherBigStructure) {
+//            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
+//        }
+//        print("]");
+//        print();
+//        print();
+//        print();
+//        print("[");
+//        for (final var record : differentBigStructure) {
+//            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
+//        }
+//        print("]");
 
-        }
-        print("]");
-        print();
-        print();
-        print();
-        print("[");
-        for (final var record : otherBigStructure) {
-            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
-        }
-        print("]");
-        print();
-        print();
-        print();
-        print("[");
-        for (final var record : differentBigStructure) {
-            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
-        }
-        print("]");
+        System.out.println(bigStructure);
+        System.out.println(otherBigStructure);
+        System.out.println(differentBigStructure);
+
+        System.out.println(bigStructure);
+        System.out.println(otherBigStructure);
+        System.out.println(differentBigStructure);
 
         print(Objects.equals(bigStructure, otherBigStructure));
         print(Objects.equals(bigStructure, differentBigStructure));
