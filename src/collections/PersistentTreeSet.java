@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enumerable<T> {
+public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enumerable<T>, java.io.Serializable {
     private final Node<T> root;
     private final int size;
 
@@ -330,7 +330,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
         }
     }
 
-    private static class Node<T extends Comparable<T>> {
+    private static class Node<T extends Comparable<T>> implements java.io.Serializable {
         final Node<T> left;
         final Node<T> right;
         final T entry;

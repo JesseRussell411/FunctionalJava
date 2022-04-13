@@ -1,10 +1,14 @@
 package collections;
 
 import annotations.UnsupportedOperation;
-import collections.iteration.*;
+import collections.iteration.ArrayIterator;
+import collections.iteration.IterableUtils;
+import collections.iteration.ListEnumeratorIterator;
+import collections.iteration.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.Enumerator;
 import collections.iteration.enumerator.IndexedBiDirectionalEnumerator;
+import collections.records.ListRecord;
 import collections.wrappers.ArrayAsList;
 import utils.ArrayUtils;
 
@@ -13,33 +17,28 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class PersistentList<T> implements List<T> {
+public class PersistentList<T> implements List<T>, java.io.Serializable {
     private static final Object[] EMPTY_ARRAY = new Object[0];
     private static final Leaf EMPTY_LEAF = new Leaf(EMPTY_ARRAY);
     private static final int PARTITION_SIZE = 32;
     private static final UnsupportedOperationException mutationException = new UnsupportedOperationException("This collection is immutable.");
 
     private final Node root;
-    private final int size;
 
     private PersistentList(Node root) {
         this.root = root;
-        size = root.itemCount();
     }
 
     public PersistentList() {
         root = EMPTY_LEAF;
-        size = 0;
     }
 
     public PersistentList(Stream<T> itemStream) {
         root = fromIterator(itemStream.iterator());
-        size = root.itemCount();
     }
 
     public PersistentList(Iterator<T> itemIterator) {
         root = fromIterator(itemIterator);
-        size = root.itemCount();
     }
 
     public PersistentList(Iterable<T> items) {
@@ -48,12 +47,10 @@ public class PersistentList<T> implements List<T> {
 
     public PersistentList(PersistentList<T> items) {
         root = items.root;
-        size = items.size;
     }
 
     public PersistentList(T[] items) {
         root = fromPartitions(new ArrayAsList<>(ArrayUtils.partition(items, PARTITION_SIZE)));
-        size = root.itemCount();
     }
 
     // factories
@@ -64,13 +61,14 @@ public class PersistentList<T> implements List<T> {
 
     // interface compliance
     @Override
+    // TODO write custom forking spliterator
     public Spliterator<T> spliterator() {
         return Spliterators.spliterator(this, Spliterator.IMMUTABLE);
     }
 
     @Override
     public int size() {
-        return size;
+        return root.itemCount();
     }
 
     @Override
@@ -795,7 +793,7 @@ public class PersistentList<T> implements List<T> {
     }
 
     // ========================= inner classes ====================================
-    private interface Node extends Enumerable<Object> {
+    private interface Node extends Enumerable<Object>, java.io.Serializable {
         int itemCount();
 
         int leafCount();

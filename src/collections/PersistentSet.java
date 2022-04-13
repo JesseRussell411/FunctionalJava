@@ -9,9 +9,14 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class PersistentSet<T> implements Enumerable<T>, Set<T> {
+public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializable {
     private final PersistentTreeSet<Entry<T>> entries;
     private final int size;
+
+    @SafeVarargs
+    public static <T> PersistentSet<T> of(T... items) {
+        return new PersistentSet<T>().withMany(items);
+    }
 
     private PersistentSet(PersistentTreeSet<Entry<T>> entries, int size) {
         this.entries = entries;
@@ -169,7 +174,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T> {
         return withoutMany(new ArrayIterator<>(values));
     }
 
-    private static class Entry<T> implements Comparable<Entry<T>> {
+    private static class Entry<T> implements Comparable<Entry<T>>, java.io.Serializable {
         final int key;
         final PersistentList<T> values;
 

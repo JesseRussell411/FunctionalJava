@@ -3,6 +3,7 @@ package reference;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+// not sure if this is actually better than just a volatile field, but it is a nice proof-of-concept.
 public class VolatileUntilSet<T> implements Supplier<T> {
     private volatile T current;
     private T cacheable;

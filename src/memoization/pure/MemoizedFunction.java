@@ -6,15 +6,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * Memoization decorator for the {@link Function} interface. It is assumed that the original function is pure;
+ * ie: no side effects and no mutable dependencies; the result is determined only by the input parameter, t.
+ * @param <T> Input type.
+ * @param <R> Return type.
+ */
 public class MemoizedFunction<T, R> implements Function<T, R> {
     private final Function<T, R> original;
     private final Map<Argument<T>, Supplier<R>> cache = Objects.requireNonNull(initCache());
 
-    private Supplier<R> fromCache(T t) {
+    private Supplier<R> cacheGet(T t) {
         return cache.get(new Argument<>(t));
     }
 
-    private void cacheResult(T t, Supplier<R> result) {
+    private void cachePut(T t, Supplier<R> result) {
         cache.put(new Argument<>(t), result);
     }
 
@@ -28,28 +34,37 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
 
     public R apply(T t) {
         // Check the cache.
-        final var fromCache = fromCache(t);
+        final var fromCache = cacheGet(t);
         if (fromCache != null) return fromCache.get();
 
-        // Cache miss, calculate t for real.
+        // Cache miss, calculate result for real.
+        R result;
         try {
-            final var result = original.apply(t);
-            cacheResult(t, () -> result);
-            return result;
+            result = original.apply(t);
         } catch (RuntimeException e) {
-            cacheResult(t, () -> {
+            cachePut(t, () -> {
                 throw e;
             });
             throw e;
         }
+
+        cachePut(t, () -> result);
+        return result;
     }
 
+    /**
+     * Circumvent the cache and call the original function.
+     */
     public R hardApply(T t) {
         return original.apply(t);
     }
 
+    /**
+     * Get the result of t from the cache.
+     * @return The cached result or null if the result is not cached.
+     */
     public R cacheApply(T t) {
-        final var fromCache = fromCache(t);
+        final var fromCache = cacheGet(t);
         if (fromCache != null) {
             return fromCache.get();
         } else {
@@ -57,10 +72,14 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
         }
     }
 
+    /**
+     * @return Whether the result of t is cached.
+     */
     public boolean isCached(T t) {
-        return fromCache(t) != null;
+        return cacheGet(t) != null;
     }
 
+    /** Wrapper to allow for null values. */
     protected record Argument<T>(T t) {
     }
 }

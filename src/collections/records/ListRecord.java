@@ -1,12 +1,13 @@
-package collections;
+package collections.records;
 
-import concurrency.Concurrency;
+import collections.PersistentList;
 import memoization.pure.Lazy;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Objects;
 import java.util.stream.Stream;
 
-public class ListRecord<T> implements Iterable<T> {
+public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
     private final PersistentList<T> items;
 
     public ListRecord() {
@@ -81,5 +82,9 @@ public class ListRecord<T> implements Iterable<T> {
     @Override
     public Iterator<T> iterator() {
         return items().iterator();
+    }
+
+    public Stream<T> stream() {
+        return items.stream();
     }
 }

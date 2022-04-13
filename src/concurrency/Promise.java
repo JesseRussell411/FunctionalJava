@@ -13,6 +13,18 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * Very similar to CompletableFuture.
+ * Like, why did I even write this?
+ * For fun.
+ *
+ * There's 4 states this promise can be in: Pending, Resolved, Rejected, and Canceled.
+ * I added canceled because sometimes we need to cancel things, and we can't just leave the promise pending.
+ * Rejected implies that something broke but canceling doesn't normally break things, and we can't resolve the promise
+ * without a result; null isn't an option because it might just be a possible result from the promise.
+ * So I added another state.
+ * @param <T>
+ */
 public class Promise<T> {
     private volatile State state = State.PENDING;
     private volatile Object value = null;

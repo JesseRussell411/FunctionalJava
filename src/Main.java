@@ -1,8 +1,10 @@
-import collections.PersistentSet;
-import collections.PersistentTreeSet;
-import collections.wrappers.ArrayAsList;
 import collections.PersistentList;
 import collections.PersistentMap;
+import collections.PersistentSet;
+import collections.PersistentTreeSet;
+import collections.records.MapRecord;
+import collections.records.SetRecord;
+import collections.wrappers.ArrayAsList;
 import concurrency.Promise;
 import memoization.pure.MemoizedBiFunction;
 import memoization.pure.MemoizedFunction;
@@ -11,7 +13,6 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 
 class Intbh {
@@ -113,33 +114,44 @@ public class Main {
 
     static void print(Iterable<?> iter) {
         if (iter == null) print("{  ~~  N U L L  ~~  }");
-        print(iterString(iter));
+        else print(iterString(iter));
     }
 
     static void print(Iterator<?> iter) {
         if (iter == null) print("{  ~~  N U L L  ~~  }");
-        print(iterString(iter));
+        else print(iterString(iter));
     }
 
     static void print(Object[] items) {
         if (items == null) print("{  ~~  N U L L  ~~  }");
-        print(iterString(new ArrayAsList<>(items)));
+        else print(iterString(new ArrayAsList<>(items)));
     }
 
     static void print(Iterable<?> iter, Object delim) {
         if (iter == null) print("{  ~~  N U L L  ~~  }");
-        print(iterString(iter, String.valueOf(delim)));
+        else print(iterString(iter, String.valueOf(delim)));
     }
 
     static void print(Iterator<?> iter, Object delim) {
         if (iter == null) print("{  ~~  N U L L  ~~  }");
-        print(iterString(iter, String.valueOf(delim)));
+        else print(iterString(iter, String.valueOf(delim)));
     }
 
     static void print(Object[] items, Object delim) {
         if (items == null) print("{  ~~  N U L L  ~~  }");
-        print(iterString(new ArrayAsList<>(items), String.valueOf(delim)));
+        else print(iterString(new ArrayAsList<>(items), String.valueOf(delim)));
     }
+
+
+    static void print(Stream<?> items, Object delim) {
+        if (items == null) print("{  ~~  N U L L  ~~  }");
+        else print(iterString(items.iterator(), String.valueOf(delim)));
+    }
+
+    static void print(Stream<?> items) {
+        print(items, ", ");
+    }
+
 
     public static int memoFib(int n) {
         return memoFib.apply(n);
@@ -384,6 +396,75 @@ public class Main {
 
 //        final var leafs = StreamSupport.stream(Spliterators.<PersistentList.Leaf>spliteratorUnknownSize(repeatedALot.getLeafs(), 0), true).toArray();
 //        final var items = StreamSupport.stream(Spliterators.<PersistentList.Leaf>spliteratorUnknownSize(repeatedALot.getLeafs(), 0), true).map(lff -> lff.items).toArray();
+
+//        final var testSet = PersistentSet.of("Hello", "world", "the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog");
+
+//        try {
+////            FileOutputStream fout = new FileOutputStream("./testOutput");
+////            ObjectOutputStream oos = new ObjectOutputStream(fout);
+////            oos.writeObject(testSet);
+//            FileInputStream fin = new FileInputStream("./testOutput");
+//            ObjectInputStream ois = new ObjectInputStream(fin);
+//            final var readedSet = (PersistentSet<String>)ois.readObject();
+//            print(readedSet);
+//            print("=====");
+//            print(testSet);
+//        } catch(Throwable e){System.err.println(e);}
+
+        final var bigStructure = new SetRecord<>(PersistentSet.of(
+                new MapRecord<>(new PersistentMap<String, String>()
+                        .with("id", "1")
+                        .with("name", "george")
+                        .with("address", "montuky")),
+
+                new MapRecord<>(new PersistentMap<String, String>()
+                        .with("id", "2")
+                        .with("name", "fred")
+                        .with("address", "penvainia"))
+        ));
+
+        final var otherBigStructure = new SetRecord<>(PersistentSet.of(
+                new MapRecord<>(new PersistentMap<String, String>()
+                        .with("id", "2")
+                        .with("address", "penvainia")
+                        .with("name", "fred")),
+                new MapRecord<>(new PersistentMap<String, String>()
+                        .with("name", "george")
+                        .with("id", "1")
+                        .with("address", "montuky"))
+        ));
+
+        final var differentBigStructure = new SetRecord<>(otherBigStructure.values().with(
+                new MapRecord<>(new PersistentMap<String, String>()
+                        .with("id", "1.5")
+                        .with("address", "extreme!")
+                        .with("name", "crazy fred"))));
+
+        print("[");
+        for (final var record : bigStructure) {
+            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
+
+        }
+        print("]");
+        print();
+        print();
+        print();
+        print("[");
+        for (final var record : otherBigStructure) {
+            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
+        }
+        print("]");
+        print();
+        print();
+        print();
+        print("[");
+        for (final var record : differentBigStructure) {
+            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
+        }
+        print("]");
+
+        print(Objects.equals(bigStructure, otherBigStructure));
+        print(Objects.equals(bigStructure, differentBigStructure));
 
 
         try (final var input = new Scanner(System.in)) {

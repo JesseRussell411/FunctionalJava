@@ -1,37 +1,108 @@
 package memoization.impure;
 
-import collections.ListRecord;
-import memoization.pure.MemoizedFunction;
+import collections.records.ListRecord;
+import reference.VolatileUntilSet;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class MemoizedRoutine<T, R> implements BiFunction<T, ListRecord<?>, R> {
-    private final MemoizedFunction<Arguments<T>, R> func;
+    private final Map<Context<T>, VolatileUntilSet<Supplier<R>>> cache = new ConcurrentHashMap<>();
+    private final Function<T, R> subRoutine;
 
-    public MemoizedRoutine(Function<T, R> original) {
-        Objects.requireNonNull(original);
-
-
-        func = new MemoizedFunction<>(
-                (arguments) -> original.apply(arguments.t));
+    public MemoizedRoutine(Function<T, R> subRoutine) {
+        Objects.requireNonNull(subRoutine);
+        this.subRoutine = subRoutine;
     }
 
-    public R hardApply(T t) {
-        return func.hardApply(new Arguments<>(t, null));
+    private VolatileUntilSet<Supplier<R>> getCachedResult(Context<T> context) {
+        final var newResult = new VolatileUntilSet<Supplier<R>>();
+        final var existingResult = cache.putIfAbsent(context, new VolatileUntilSet<>());
+        return existingResult == null ? newResult : existingResult;
     }
 
-    public R apply(T t, Object[] dependencies) {
+    public R apply(T argument, ListRecord<?> dependencies) {
         Objects.requireNonNull(dependencies);
-        return func.apply(new Arguments<>(t, new ListRecord<>(dependencies)));
+        final var result = getCachedResult(new Context<>(argument, dependencies));
+
+        // check cache
+        var cacheValue = result.get();
+        if (cacheValue != null) return cacheValue.get();
+
+        // lock and check again
+        synchronized (result) {
+            cacheValue = result.get();
+            if (cacheValue != null) return cacheValue.get();
+
+            // run the subroutine
+            R newValue;
+            try {
+                newValue = subRoutine.apply(argument);
+            } catch (RuntimeException re) {
+                result.set(() -> {
+                    throw re;
+                });
+                throw re;
+            }
+            result.set(() -> newValue);
+            return newValue;
+        }
     }
 
-    public R apply(T t, ListRecord<?> dependencies) {
-        Objects.requireNonNull(dependencies);
-        return func.apply(new Arguments<>(t, dependencies));
+    public R apply(T argument, Object[] dependencies) {
+        return apply(argument, new ListRecord<>(dependencies));
     }
 
-    private record Arguments<T>(T t, ListRecord<?> objectTuple) {
+    public R apply(T argument, Iterable<?> dependencies) {
+        return apply(argument, new ListRecord<>(dependencies));
+    }
+
+    public R apply(T argument, Stream<T> dependencies) {
+        return apply(argument, new ListRecord<>(dependencies));
+    }
+
+    public R apply(T argument, Iterator<?> dependencies) {
+        return apply(argument, new ListRecord<>(dependencies));
+    }
+
+    public R cacheApply(T argument, ListRecord<?> dependencies) {
+        final var cachedResult = cache.get(new Context<>(argument, dependencies));
+
+        if (cachedResult != null) {
+            final var fromCache = cachedResult.get();
+
+            if (fromCache != null) {
+                return fromCache.get();
+            } else return null;
+        } else return null;
+    }
+
+    public R cacheApply(T argument, Object[] dependencies) {
+        return cacheApply(argument, new ListRecord<>(dependencies));
+    }
+
+    public R cacheApply(T argument, Iterable<?> dependencies) {
+        return cacheApply(argument, new ListRecord<>(dependencies));
+    }
+
+    public R cacheApply(T argument, Stream<T> dependencies) {
+        return cacheApply(argument, new ListRecord<>(dependencies));
+    }
+
+    public R cacheApply(T argument, Iterator<?> dependencies) {
+        return cacheApply(argument, new ListRecord<>(dependencies));
+    }
+
+    public R hardApply(T argument) {
+        return subRoutine.apply(argument);
+    }
+
+    record Context<T>(T argument, ListRecord<?> dependencies) {
     }
 }
