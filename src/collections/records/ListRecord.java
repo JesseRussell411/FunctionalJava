@@ -1,13 +1,15 @@
 package collections.records;
 
 import collections.persistent.PersistentList;
-import memoization.pure.Lazy;
-import memoization.pure.WeakLazy;
+import memoization.pure.lazy.Lazy;
+import memoization.pure.lazy.SoftLazy;
 
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+// TODO add no-caching flag
 
 public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
     private final PersistentList<T> items;
@@ -91,7 +93,7 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
         return items.stream();
     }
 
-    private final Supplier<String> lazyToString = new WeakLazy<>(() -> {
+    private final Supplier<String> lazyToString = new SoftLazy<>(() -> {
         final var builder = new StringBuilder();
         final var iter = iterator();
 

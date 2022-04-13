@@ -1,6 +1,7 @@
 package memoization.impure;
 
 import collections.records.ListRecord;
+import org.jetbrains.annotations.NotNull;
 import reference.VolatileUntilSet;
 
 import java.util.Iterator;
@@ -13,10 +14,12 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class MemoizedRoutine<T, R> implements BiFunction<T, ListRecord<?>, R> {
+    @NotNull
     private final Map<Context<T>, VolatileUntilSet<Supplier<R>>> cache = new ConcurrentHashMap<>();
+    @NotNull
     private final Function<T, R> subRoutine;
 
-    public MemoizedRoutine(Function<T, R> subRoutine) {
+    public MemoizedRoutine(@NotNull Function<T, R> subRoutine) {
         Objects.requireNonNull(subRoutine);
         this.subRoutine = subRoutine;
     }
@@ -27,6 +30,7 @@ public class MemoizedRoutine<T, R> implements BiFunction<T, ListRecord<?>, R> {
         return existingResult == null ? newResult : existingResult;
     }
 
+    @Override
     public R apply(T argument, ListRecord<?> dependencies) {
         Objects.requireNonNull(dependencies);
         final var result = getCachedResult(new Context<>(argument, dependencies));
@@ -101,6 +105,26 @@ public class MemoizedRoutine<T, R> implements BiFunction<T, ListRecord<?>, R> {
 
     public R hardApply(T argument) {
         return subRoutine.apply(argument);
+    }
+
+    public boolean isCached(T argument, ListRecord<?> dependencies) {
+        return cache.get(new Context<>(argument, dependencies)) != null;
+    }
+
+    public boolean isCached(T argument, Object[] dependencies) {
+        return isCached(argument, new ListRecord<>(dependencies));
+    }
+
+    public boolean isCached(T argument, Iterable<?> dependencies) {
+        return isCached(argument, new ListRecord<>(dependencies));
+    }
+
+    public boolean isCached(T argument, Stream<?> dependencies) {
+        return isCached(argument, new ListRecord<>(dependencies));
+    }
+
+    public boolean isCached(T argument, Iterator<?> dependencies) {
+        return isCached(argument, new ListRecord<>(dependencies));
     }
 
     record Context<T>(T argument, ListRecord<?> dependencies) {

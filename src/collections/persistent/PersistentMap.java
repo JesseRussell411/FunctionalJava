@@ -1,6 +1,8 @@
 package collections.persistent;
 
 import annotations.UnsupportedOperation;
+import collections.records.MapRecord;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.AbstractMap;
@@ -9,13 +11,14 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public class PersistentMap<K, V> extends AbstractMap<K, V> implements Serializable {
+    @NotNull
     private final PersistentSet<Entry<K, V>> entries;
 
     public PersistentMap() {
         entries = new PersistentSet<>();
     }
 
-    public PersistentMap(PersistentSet<Entry<K, V>> entries) {
+    public PersistentMap(@NotNull PersistentSet<Entry<K, V>> entries) {
         this.entries = entries;
     }
 
@@ -77,6 +80,10 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements Serializab
 
     public Stream<Entry<K, V>> stream(boolean parallel) {
         return entries.stream(parallel);
+    }
+
+    public MapRecord<K, V> toRecord() {
+        return new MapRecord<>(this);
     }
 
     public boolean containsKey(Object key) {

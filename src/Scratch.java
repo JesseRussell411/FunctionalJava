@@ -1,13 +1,12 @@
+import collections.adapters.ArrayAsList;
 import collections.persistent.PersistentList;
 import collections.persistent.PersistentMap;
 import collections.persistent.PersistentSet;
 import collections.persistent.PersistentTreeSet;
 import collections.records.MapRecord;
 import collections.records.SetRecord;
-import collections.adapters.ArrayAsList;
 import concurrency.Promise;
-import memoization.pure.MemoizedBiFunction;
-import memoization.pure.MemoizedFunction;
+import memoization.pure.function.MemoizedFunction;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -15,6 +14,34 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 
+class MemoizedBiFunction<T, U, R> implements BiFunction<T, U, R> {
+    private final MemoizedFunction<Arguments<T, U>, R> function;
+
+    public MemoizedBiFunction(BiFunction<T, U, R> original) {
+        function = new MemoizedFunction<>((args) -> original.apply(args.t, args.u));
+    }
+
+    public R apply(T t, U u) {
+        return function.apply(new Arguments<>(t, u));
+    }
+
+    public R cacheApply(T t, U u) {
+        return function.cacheApply(new Arguments<>(t, u));
+    }
+
+    public R hardApply(T t, U u) {
+        return function.hardApply(new Arguments<>(t, u));
+    }
+
+    public boolean isCached(T t, U u) {
+        return function.isCached(new Arguments<>(t, u));
+    }
+
+    private record Arguments<T, U>(T t, U u) {
+    }
+}
+
+/** int wrapper that returns a (B)ad (H)ash*/
 class Intbh {
     public final int value;
 
@@ -44,7 +71,7 @@ class Intbh {
     }
 }
 
-public class Main {
+public class Scratch {
     static <T> ArrayList<T> repeat(ArrayList<T> list, int times) {
         if (times == 2) {
             final var resultSize = list.size() * 2;
@@ -162,7 +189,7 @@ public class Main {
         if (n <= 0) return 0;
         if (n == 1) return 1;
 
-        return Main.memoFib.apply(n - 1) + Main.memoFib.apply(n - 2);
+        return Scratch.memoFib.apply(n - 1) + Scratch.memoFib.apply(n - 2);
     });
 
     public static int fib(int n) {
@@ -184,7 +211,7 @@ public class Main {
             if (n2 > 1) {
                 return new Fib_Fact(
                         n1,
-                        Main.memoFibFact.apply(0, n2 - 1).fact * n2);
+                        Scratch.memoFibFact.apply(0, n2 - 1).fact * n2);
             } else {
                 return new Fib_Fact(
                         n1,
@@ -192,13 +219,13 @@ public class Main {
             }
         } else {
             if (n2 > 1) {
-                final var half = Main.memoFibFact.apply(n1 - 1, n2 - 1);
+                final var half = Scratch.memoFibFact.apply(n1 - 1, n2 - 1);
                 return new Fib_Fact(
-                        half.fib + Main.memoFibFact.apply(n1 - 2, 0).fib,
+                        half.fib + Scratch.memoFibFact.apply(n1 - 2, 0).fib,
                         half.fact * n2);
             } else {
                 return new Fib_Fact(
-                        Main.memoFibFact.apply(n1 - 1, 0).fib + Main.memoFibFact.apply(n1 - 2, 0).fib,
+                        Scratch.memoFibFact.apply(n1 - 1, 0).fib + Scratch.memoFibFact.apply(n1 - 2, 0).fib,
                         n2);
             }
         }
@@ -375,12 +402,12 @@ public class Main {
         print(pts.stream().sorted().iterator(), "\n");
 
         final var somelist = PersistentList.of(1, 2, 3, 4, 5);
-        print(somelist.repeat(4));
-        print(somelist.repeat(-4));
+        print(somelist.repeated(4));
+        print(somelist.repeated(-4));
         start = System.currentTimeMillis();
-        final var repeatedALot = somelist.repeat(40_000_000);
+        final var repeatedALot = somelist.repeated(40_000_000);
         stop = System.currentTimeMillis();
-        print("repeating took:" + (stop - start) + "ms");
+        print("repeating 40,000,000 times took:" + (stop - start) + "ms");
 
 //        final var someArrayList = new ArrayList<>(5);
 //        someArrayList.add(1);
@@ -411,34 +438,41 @@ public class Main {
 //            print(testSet);
 //        } catch(Throwable e){System.err.println(e);}
 
-        final var bigStructure = new SetRecord<>(PersistentSet.of(
-                new MapRecord<>(new PersistentMap<String, String>()
+        final var bigStructure = PersistentSet.of(
+                new PersistentMap<String, String>()
                         .with("id", "1")
                         .with("name", "george")
-                        .with("address", "montuky")),
-
-                new MapRecord<>(new PersistentMap<String, String>()
+                        .with("address", "montuky").toRecord(),
+                new PersistentMap<String, String>()
                         .with("id", "2")
                         .with("name", "fred")
-                        .with("address", "penvainia"))
-        ));
+                        .with("address", "penvainia").toRecord()).toRecord();
 
-        final var otherBigStructure = new SetRecord<>(PersistentSet.of(
-                new MapRecord<>(new PersistentMap<String, String>()
+        final var otherBigStructure = new PersistentSet<>()
+                .with(new PersistentMap<String, String>()
                         .with("id", "2")
                         .with("address", "penvainia")
-                        .with("name", "fred")),
-                new MapRecord<>(new PersistentMap<String, String>()
+                        .with("name", "fred")
+                        .toRecord())
+                .with(new PersistentMap<String, String>()
                         .with("name", "george")
                         .with("id", "1")
-                        .with("address", "montuky"))
-        ));
+                        .with("address", "montuky")
+                        .toRecord())
+                .toRecord();
 
         final var differentBigStructure = new SetRecord<>(otherBigStructure.values().with(
                 new MapRecord<>(new PersistentMap<String, String>()
                         .with("id", "1.5")
                         .with("address", "extreme!")
                         .with("name", "crazy fred"))));
+
+        final var differentDifferentBigStructure = differentBigStructure.values()
+                .with(new PersistentMap<>()
+                        .with("bob", PersistentSet.of("sally", "may").toRecord())
+                        .with("john", PersistentSet.of("super", "man").toRecord())
+                        .toRecord())
+                .toRecord();
 
 //        print("[");
 //        for (final var record : bigStructure) {

@@ -5,12 +5,15 @@ import collections.iteration.adapters.ArrayIterator;
 import collections.iteration.adapters.EnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
+import collections.records.SetRecord;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializable {
+    @NotNull
     private final PersistentTreeSet<Entry<T>> entries;
     private final int size;
 
@@ -19,7 +22,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
         return new PersistentSet<T>().withMany(items);
     }
 
-    private PersistentSet(PersistentTreeSet<Entry<T>> entries, int size) {
+    private PersistentSet(@NotNull PersistentTreeSet<Entry<T>> entries, int size) {
         this.entries = entries;
         this.size = size;
         assert entries != null;
@@ -88,6 +91,10 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
 
     public BiDirectionalEnumerator<T> enumerator(boolean startAtEnd) {
         return new SelfEnumerator<>(entries, startAtEnd);
+    }
+
+    public SetRecord<T> toRecord() {
+        return new SetRecord<>(this);
     }
 
     private Entry<T> getEntry(int hash) {
@@ -186,7 +193,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
         }
 
         Entry<T> with(T value) {
-            return new Entry<>(key, values.replaceOrPut(value));
+            return new Entry<>(key, values.with(value));
         }
 
         Entry<T> without(T value) {

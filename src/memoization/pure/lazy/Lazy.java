@@ -1,4 +1,4 @@
-package memoization.pure;
+package memoization.pure.lazy;
 
 import reference.VolatileUntilSet;
 

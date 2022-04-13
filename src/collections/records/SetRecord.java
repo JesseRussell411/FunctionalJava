@@ -1,14 +1,16 @@
 package collections.records;
 
 import collections.persistent.PersistentSet;
-import memoization.pure.Lazy;
-import memoization.pure.WeakLazy;
+import memoization.pure.lazy.Lazy;
+import memoization.pure.lazy.SoftLazy;
 
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+// TODO add no-caching flag
 
 public class SetRecord<T> implements Iterable<T>, Serializable {
     private final PersistentSet<T> values;
@@ -76,7 +78,7 @@ public class SetRecord<T> implements Iterable<T>, Serializable {
         return values.stream();
     }
 
-    private final Supplier<String> lazyToString = new WeakLazy<>(() -> {
+    private final Supplier<String> lazyToString = new SoftLazy<>(() -> {
         final var builder = new StringBuilder();
         final var iter = iterator();
 

@@ -1,9 +1,10 @@
-package memoization.pure;
+package memoization.pure.lazy;
 
 import reference.FinalPointer;
 import reference.NullableWeakReference;
 import reference.VolatileUntilSet;
 
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.function.Supplier;

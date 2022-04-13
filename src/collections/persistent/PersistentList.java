@@ -1,31 +1,33 @@
 package collections.persistent;
 
-import annotations.UnsupportedOperation;
-import collections.iteration.adapters.ArrayIterator;
+import collections.adapters.ArrayAsList;
 import collections.iteration.IterableUtils;
+import collections.iteration.adapters.ArrayIterator;
 import collections.iteration.adapters.ListEnumeratorIterator;
 import collections.iteration.adapters.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
+import collections.iteration.enumerable.IndexedBiDirectionalEnumerable;
 import collections.iteration.enumerator.Enumerator;
 import collections.iteration.enumerator.IndexedBiDirectionalEnumerator;
 import collections.records.ListRecord;
-import collections.adapters.ArrayAsList;
+import memoization.pure.lazy.SoftLazy;
+import org.jetbrains.annotations.NotNull;
 import utils.ArrayUtils;
 
-import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class PersistentList<T> implements List<T>, java.io.Serializable {
+public class PersistentList<T> extends AbstractList<T> implements List<T>, IndexedBiDirectionalEnumerable<T>, java.io.Serializable {
     private static final Object[] EMPTY_ARRAY = new Object[0];
     private static final Leaf EMPTY_LEAF = new Leaf(EMPTY_ARRAY);
     private static final int PARTITION_SIZE = 32;
-    private static final UnsupportedOperationException mutationException = new UnsupportedOperationException("This collection is immutable.");
 
+    @NotNull
     private final Node root;
 
-    private PersistentList(Node root) {
+    private PersistentList(@NotNull Node root) {
         this.root = root;
     }
 
@@ -60,8 +62,8 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
     }
 
     // interface compliance
-    @Override
     // TODO write custom forking spliterator
+    @Override
     public Spliterator<T> spliterator() {
         return Spliterators.spliterator(this, Spliterator.IMMUTABLE);
     }
@@ -69,53 +71,6 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
     @Override
     public int size() {
         return root.itemCount();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return size() == 0;
-    }
-
-    @Override
-    public boolean contains(Object o) {
-        for (final var item : this) {
-            if (Objects.equals(o, item)) return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean containsAll(Collection<?> c) {
-        Objects.requireNonNull(c);
-        for (final var item : c) {
-            if (!contains(item)) return false;
-        }
-
-        return true;
-    }
-
-    public boolean containsAll(Iterable<?> items) {
-        final var thisItemIterator = this.iterator();
-        final var cache = new HashSet<T>();
-
-        itemLoop:
-        for (final var item : items) {
-            // check cache
-            if (cache.contains(item)) continue; // Item found, continue to next item.
-
-            // cache miss, continue iterating through list items.
-            while (thisItemIterator.hasNext()) {
-                final var thisItem = thisItemIterator.next();
-                cache.add(thisItem);
-                if (Objects.equals(item, thisItem)) continue itemLoop; // Item found, continue to next item.
-            }
-
-            // item not found
-            return false;
-        }
-
-        // All items were not-not found, so they must have all been found.
-        return true;
     }
 
     public IndexedBiDirectionalEnumerator<T> enumerator(boolean startAtEnd) {
@@ -130,6 +85,7 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
         return (IndexedBiDirectionalEnumerator<T>) new ItemEnumerator(root, index);
     }
 
+    @Override
     public IndexedBiDirectionalEnumerator<T> enumerator() {
         return enumerator(-1);
     }
@@ -153,48 +109,16 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
         return StreamSupport.stream(spliterator(), parallel);
     }
 
+    @Override
     public Stream<T> stream() {
         return stream(true);
     }
 
-    public ListRecord<T> toListRecord() {
+    public ListRecord<T> toRecord() {
         return new ListRecord<>(this);
     }
 
     @Override
-    public Object[] toArray() {
-        final var result = new Object[size()];
-        int index = 0;
-        for (final var item : this) {
-            result[index++] = item;
-        }
-        return result;
-    }
-
-    @Override
-    public <T1> T1[] toArray(T1[] a) {
-        Objects.requireNonNull(a);
-        final T1[] result = (a.length >= size())
-                ? a
-                : (T1[]) Array.newInstance(a.getClass().componentType(), size());
-
-        int index = 0;
-
-        // copy list contents
-        for (final var item : this) {
-            if (index < result.length) {
-                ((Object[]) result)[index++] = item;
-            } else break;
-        }
-
-        // pad with null
-        while (index < result.length) {
-            result[index++] = null;
-        }
-
-        return result;
-    }
-
     public int indexOf(Object o) {
         int index = 0;
         for (final var item : this) {
@@ -204,6 +128,7 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
         return -1;
     }
 
+    @Override
     public int lastIndexOf(Object o) {
         int index = 0;
         int lastIndex = -1;
@@ -348,20 +273,20 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
         return get(size() - trimmedLength, trimmedLength);
     }
 
-    public PersistentList<T> put(T item) {
+    public PersistentList<T> withPut(T item) {
         return withAddition(size(), item);
     }
 
-    public PersistentList<T> pop() {
+    public PersistentList<T> withoutPopped() {
         if (size() == 0) return new PersistentList<>();
         return without(size() - 1);
     }
 
-    public PersistentList<T> push(T item) {
+    public PersistentList<T> withPushed(T item) {
         return withAddition(0, item);
     }
 
-    public PersistentList<T> pull() {
+    public PersistentList<T> withoutPulled() {
         if (size() == 0) return new PersistentList<>();
         return without(0);
     }
@@ -392,33 +317,37 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
 
     /**
      * Either replaces the first occurrence of the item or appends the item at the end.
+     * Similar in behavior to a set, ensures that the list contains the given instance.
      *
      * @return A copy of the list with the first occurrence of a matching item (as determined by Object.equals()) replaced with the item given or the item appended to the end if it did not occur.
      */
-    public PersistentList<T> replaceOrPut(T item) {
+    public PersistentList<T> with(T item) {
         if (item == null && contains(null)) return this;
         final var replacementAttempt = replaceFirstOccurrence(root, item);
         if (replacementAttempt != null) return new PersistentList<>(replacementAttempt);
-        return put(item);
+        return withPut(item);
     }
 
+    private final Supplier<PersistentList<T>> lazyReversed = new SoftLazy<>(() -> new PersistentList<>(reversedIterator()));
+
     public PersistentList<T> reversed() {
-        return new PersistentList<>(reversedIterator());
+        return lazyReversed.get();
     }
 
     public PersistentList<T> concat(PersistentList<T> other) {
         return this.withInsertion(size(), other);
     }
 
-    public PersistentList<T> repeat(int times) {
+    public PersistentList<T> repeated(int times) {
         // break factor cannot be less than 2. Any value >= 2 is ok.
-        final int BREAK_FACTOR = 2;
+        final int breakFactor = Math.max(1, size() < PARTITION_SIZE ? PARTITION_SIZE / size() : PARTITION_SIZE);
 
-        if (times < 0) return reversed().repeat(-times);
+        if (times < 0) return reversed().repeated(-times);
         if (times == 1) return this;
         if (times == 0) return new PersistentList<>();
 
-        if (times <= BREAK_FACTOR) {
+        // base case
+        if (times <= breakFactor) {
             var result = this;
             for (int i = 1; i < times; ++i) {
                 result = result.concat(this);
@@ -426,10 +355,13 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
             return result;
         }
 
-        final var factor = times / BREAK_FACTOR;
-        final var remainder = times % BREAK_FACTOR;
-        final var repeatedByFactor = this.repeat(factor);
-        return repeatedByFactor.repeat(BREAK_FACTOR).concat(this.repeat(remainder));
+        // recursive case
+        final var quotient = times / breakFactor;
+        final var remainder = times % breakFactor;
+        final var repeatedByQuotient = this.repeated(quotient);
+        final var repeatedByRemainder = this.repeated(remainder);
+
+        return repeatedByQuotient.repeated(breakFactor).concat(repeatedByRemainder);
     }
 
 
@@ -813,14 +745,16 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
     }
 
     private static class Branch implements Node {
+        @NotNull
         final Node left;
+        @NotNull
         final Node right;
         final int itemCount;
         final int leafCount;
         final int depth;
         final int balanceFactor;
 
-        public Branch(Node left, Node right) {
+        public Branch(@NotNull Node left, @NotNull Node right) {
             this.left = left;
             this.right = right;
             itemCount = left.itemCount() + right.itemCount();
@@ -1130,68 +1064,5 @@ public class PersistentList<T> implements List<T>, java.io.Serializable {
         public int currentIndex() {
             return locationIndex;
         }
-
-    }
-
-
-    // ============================== unsupported interface methods ========================
-    @Override
-    @UnsupportedOperation
-    public boolean add(T t) {
-        throw mutationException;
-    }
-
-    @Override
-    @UnsupportedOperation
-    public boolean remove(Object o) {
-        throw mutationException;
-    }
-
-    @Override
-    @UnsupportedOperation
-    public boolean addAll(Collection<? extends T> c) {
-        throw mutationException;
-    }
-
-    @Override
-    @UnsupportedOperation
-    public boolean addAll(int index, Collection<? extends T> c) {
-        throw mutationException;
-    }
-
-    @Override
-    @UnsupportedOperation
-    public boolean removeAll(Collection<?> c) {
-        throw mutationException;
-    }
-
-    @Override
-    @UnsupportedOperation
-    public boolean retainAll(Collection<?> c) {
-        throw mutationException;
-    }
-
-    @Override
-    @UnsupportedOperation
-    public void clear() {
-        throw mutationException;
-    }
-
-    @Override
-    @UnsupportedOperation
-    public T set(int index, T element) {
-        throw mutationException;
-    }
-
-    @Override
-    @UnsupportedOperation
-    public void add(int index, T element) {
-        throw mutationException;
-    }
-
-    @Override
-    @UnsupportedOperation
-    public T remove(int index) {
-        throw mutationException;
     }
 }

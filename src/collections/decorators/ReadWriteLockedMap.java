@@ -6,6 +6,13 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * Because Collections.synchronizedMap() synchronized on every call including get.
+ * This wrapper allows multiple threads to read from the map at the same time, only
+ * locking completely when it's written to.
+ * @param <K>
+ * @param <V>
+ */
 public class ReadWriteLockedMap<K, V> implements Map<K, V> {
     private final Map<K, V> entries;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();

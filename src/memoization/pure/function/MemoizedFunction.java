@@ -1,4 +1,6 @@
-package memoization.pure;
+package memoization.pure.function;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.Objects;
@@ -13,7 +15,9 @@ import java.util.function.Supplier;
  * @param <R> Return type.
  */
 public class MemoizedFunction<T, R> implements Function<T, R> {
+    @NotNull
     private final Function<T, R> original;
+    @NotNull
     private final Map<Argument<T>, Supplier<R>> cache = Objects.requireNonNull(initCache());
 
     private Supplier<R> cacheGet(T t) {

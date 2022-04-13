@@ -7,6 +7,7 @@ import collections.iteration.adapters.EnumeratorIterator;
 import collections.iteration.adapters.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
+import org.jetbrains.annotations.NotNull;
 import reference.Pointer;
 
 import java.util.*;
@@ -114,11 +115,12 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
         return withMany(new ArrayIterator<>(values));
     }
 
-    public PersistentTreeSet<T> with(T value) {
+    public PersistentTreeSet<T> with(@NotNull T value) {
         Objects.requireNonNull(value);
         // TODO add abort on duplicate instance
         final var size = new Pointer<>(size());
-        return Assertions.assert_CorrectSize(with(root, value, size).wrap(size.current));
+        return Assertions.assert_CorrectSize(
+                with(root, value, size).wrap(size.current));
     }
 
     private static <T extends Comparable<T>> Node<T> with(Node<T> n, T value, Pointer<Integer> size) {
@@ -331,11 +333,14 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
     private static class Node<T extends Comparable<T>> implements java.io.Serializable {
         final Node<T> left;
         final Node<T> right;
+        @NotNull
         final T entry;
+        // balance factor can't be greater than 2 or less than -2
         final byte balanceFactor;
+        // depth can't be greater than log_2(2^31) = 31
         final byte depth;
 
-        Node(Node<T> left, Node<T> right, T entry) {
+        Node(Node<T> left, Node<T> right, @NotNull T entry) {
             assert entry != null;
             this.left = left;
             this.right = right;

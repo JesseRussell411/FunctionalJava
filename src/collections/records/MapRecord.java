@@ -1,14 +1,16 @@
 package collections.records;
 
 import collections.persistent.PersistentMap;
-import memoization.pure.Lazy;
-import memoization.pure.WeakLazy;
+import memoization.pure.lazy.Lazy;
+import memoization.pure.lazy.SoftLazy;
 
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+// TODO add no-caching flag
 
 public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Serializable {
     private final PersistentMap<K, V> entries;
@@ -59,7 +61,7 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
         return entries.stream();
     }
 
-    private final Supplier<String> lazyToString = new WeakLazy<>(() -> {
+    private final Supplier<String> lazyToString = new SoftLazy<>(() -> {
         final var builder = new StringBuilder();
         final var iter = iterator();
         builder.append("{ ");
