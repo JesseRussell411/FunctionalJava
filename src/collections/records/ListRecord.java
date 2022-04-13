@@ -56,6 +56,7 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
 
     @Override
     public boolean equals(Object obj) {
+        // TODO equality caching
         if (this == obj) return true;
         if (!(obj instanceof ListRecord<?> other)) return false;
 
@@ -100,7 +101,7 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
             builder.append(", ").append(iter.next());
         }
         builder.append(" ]");
-        
+
         return builder.toString();
     });
 

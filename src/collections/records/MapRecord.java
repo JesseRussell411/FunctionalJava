@@ -36,6 +36,7 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
 
     @Override
     public boolean equals(Object o) {
+        // TODO equality caching
         if (!(o instanceof MapRecord<?, ?> other)) return false;
         if (entries.size() == 0 && other.entries.size() == 0) return true;
         if (entries.size() != other.entries.size()) return false;
