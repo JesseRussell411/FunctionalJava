@@ -13,11 +13,11 @@ import java.util.stream.Stream;
 // TODO add no-caching flag
 
 public class SetRecord<T> implements Iterable<T>, Serializable {
-    private final PersistentSet<T> values;
+    private final PersistentSet<T> set;
 
-    public SetRecord(PersistentSet<T> values) {
-        Objects.requireNonNull(values);
-        this.values = values;
+    public SetRecord(PersistentSet<T> set) {
+        Objects.requireNonNull(set);
+        this.set = set;
     }
 
     public SetRecord(T[] items) {
@@ -37,7 +37,7 @@ public class SetRecord<T> implements Iterable<T>, Serializable {
     }
 
     public PersistentSet<T> values() {
-        return values;
+        return set;
     }
 
     private final Supplier<Integer> lazyHash = new Lazy<>(() -> {
@@ -58,12 +58,12 @@ public class SetRecord<T> implements Iterable<T>, Serializable {
     public boolean equals(Object o) {
         // TODO equality caching
         if (!(o instanceof SetRecord<?> other)) return false;
-        if (values.size() == 0 && other.values.size() == 0) return true;
-        if (values.size() != other.values.size()) return false;
+        if (set.size() == 0 && other.set.size() == 0) return true;
+        if (set.size() != other.set.size()) return false;
         if (hashCode() != other.hashCode()) return false;
 
-        for (final var value : values) {
-            if (!other.values.contains(value)) return false;
+        for (final var value : set) {
+            if (!other.set.contains(value)) return false;
         }
 
         return true;
@@ -71,11 +71,11 @@ public class SetRecord<T> implements Iterable<T>, Serializable {
 
     @Override
     public Iterator<T> iterator() {
-        return values.iterator();
+        return set.iterator();
     }
 
     public Stream<T> stream() {
-        return values.stream();
+        return set.stream();
     }
 
     private final Supplier<String> lazyToString = new SoftLazy<>(() -> {

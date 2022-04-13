@@ -13,14 +13,14 @@ import java.util.stream.Stream;
 // TODO add no-caching flag
 
 public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Serializable {
-    private final PersistentMap<K, V> entries;
+    private final PersistentMap<K, V> map;
 
     public PersistentMap<K, V> entries() {
-        return entries;
+        return map;
     }
 
-    public MapRecord(PersistentMap<K, V> entries) {
-        this.entries = entries;
+    public MapRecord(PersistentMap<K, V> map) {
+        this.map = map;
     }
 
     private final Supplier<Integer> lazyHash = new Lazy<>(() -> {
@@ -40,13 +40,14 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
     public boolean equals(Object o) {
         // TODO equality caching
         if (!(o instanceof MapRecord<?, ?> other)) return false;
-        if (entries.size() == 0 && other.entries.size() == 0) return true;
-        if (entries.size() != other.entries.size()) return false;
+        if (map.size() == 0 && other.map.size() == 0) return true;
+        if (map.size() != other.map.size()) return false;
         if (hashCode() != other.hashCode()) return false;
 
-        for (final var entry : entries.entrySet()) {
-            final var otherValue = other.entries.get(entry.getKey());
-            if (!Objects.equals(entry.getValue(), otherValue)) return false;
+        for (final var entry : map.entrySet()) {
+            final var otherEntry = other.map.getEntry(entry.getKey());
+            if (otherEntry == null) return false;
+            if (!Objects.equals(entry.getValue(), otherEntry.value())) return false;
         }
 
         return true;
@@ -54,11 +55,11 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
 
     @Override
     public Iterator<PersistentMap.Entry<K, V>> iterator() {
-        return entries.getEntries().iterator();
+        return map.getEntries().iterator();
     }
 
     public Stream<PersistentMap.Entry<K, V>> stream() {
-        return entries.stream();
+        return map.stream();
     }
 
     private final Supplier<String> lazyToString = new SoftLazy<>(() -> {

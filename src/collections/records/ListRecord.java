@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 // TODO add no-caching flag
 
 public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
-    private final PersistentList<T> items;
+    private final PersistentList<T> list;
 
     public ListRecord() {
         this(new PersistentList<>());
@@ -26,20 +26,20 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
         this(new PersistentList<>(itemIterator));
     }
 
-    public ListRecord(Iterable<T> items) {
-        this(new PersistentList<>(items));
+    public ListRecord(Iterable<T> list) {
+        this(new PersistentList<>(list));
     }
 
-    public ListRecord(T[] items) {
-        this(new PersistentList<>(items));
+    public ListRecord(T[] list) {
+        this(new PersistentList<>(list));
     }
 
-    public ListRecord(PersistentList<T> items) {
-        this.items = Objects.requireNonNull(items);
+    public ListRecord(PersistentList<T> list) {
+        this.list = Objects.requireNonNull(list);
     }
 
     public PersistentList<T> items() {
-        return items;
+        return list;
     }
 
     // important stuff
@@ -62,7 +62,7 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
         if (this == obj) return true;
         if (!(obj instanceof ListRecord<?> other)) return false;
 
-        if (items == other.items) return true;
+        if (list == other.list) return true;
         if (isEmpty() && other.isEmpty()) return true;
         if (size() != other.size()) return false;
 
@@ -90,7 +90,7 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
     }
 
     public Stream<T> stream() {
-        return items.stream();
+        return list.stream();
     }
 
     private final Supplier<String> lazyToString = new SoftLazy<>(() -> {
