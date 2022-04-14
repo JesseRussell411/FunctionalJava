@@ -41,7 +41,9 @@ class MemoizedBiFunction<T, U, R> implements BiFunction<T, U, R> {
     }
 }
 
-/** int wrapper that returns a (B)ad (H)ash*/
+/**
+ * int wrapper that returns a (B)ad (H)ash
+ */
 class Intbh {
     public final int value;
 
@@ -404,62 +406,38 @@ public class Scratch {
         final var somelist = PersistentList.of(1, 2, 3, 4, 5);
         print(somelist.repeated(4));
         print(somelist.repeated(-4));
+        System.out.println(somelist.repeated(2).asString());
         start = System.currentTimeMillis();
-        final var repeatedALot = somelist.repeated(40_000_000);
+        final var repeatedALot = somelist.repeated(429_496_729);
         stop = System.currentTimeMillis();
-        print("repeating 40,000,000 times took:" + (stop - start) + "ms");
-
-//        final var someArrayList = new ArrayList<>(5);
-//        someArrayList.add(1);
-//        someArrayList.add(2);
-//        someArrayList.add(3);
-//        someArrayList.add(4);
-//        someArrayList.add(5);
-//        start = System.currentTimeMillis();
-//        final var someArrayListRepeatedALot = repeat(someArrayList, 40_000_000);
-//        stop = System.currentTimeMillis();
-//        print("repeating AR took:" + (stop - start) + "ms");
-
-
-//        final var leafs = StreamSupport.stream(Spliterators.<PersistentList.Leaf>spliteratorUnknownSize(repeatedALot.getLeafs(), 0), true).toArray();
-//        final var items = StreamSupport.stream(Spliterators.<PersistentList.Leaf>spliteratorUnknownSize(repeatedALot.getLeafs(), 0), true).map(lff -> lff.items).toArray();
-
-//        final var testSet = PersistentSet.of("Hello", "world", "the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog");
-
-//        try {
-////            FileOutputStream fout = new FileOutputStream("./testOutput");
-////            ObjectOutputStream oos = new ObjectOutputStream(fout);
-////            oos.writeObject(testSet);
-//            FileInputStream fin = new FileInputStream("./testOutput");
-//            ObjectInputStream ois = new ObjectInputStream(fin);
-//            final var readedSet = (PersistentSet<String>)ois.readObject();
-//            print(readedSet);
-//            print("=====");
-//            print(testSet);
-//        } catch(Throwable e){System.err.println(e);}
+        print("repeating 429_496_729 times took:" + (stop - start) + "ms");
+        print("size after repeating: " + repeatedALot.size());
 
         final var bigStructure = PersistentSet.of(
-                new PersistentMap<String, String>()
-                        .with("id", "1")
-                        .with("name", "george")
-                        .with("address", "montuky").toRecord(),
-                new PersistentMap<String, String>()
-                        .with("id", "2")
-                        .with("name", "fred")
-                        .with("address", "penvainia").toRecord()).toRecord();
+                        new PersistentMap<String, String>()
+                                .with("id", "1")
+                                .with("name", "george")
+                                .with("address", "montuky")
+                                .asRecord(),
+                        new PersistentMap<String, String>()
+                                .with("id", "2")
+                                .with("name", "fred")
+                                .with("address", "penvainia")
+                                .asRecord())
+                .asRecord();
 
         final var otherBigStructure = new PersistentSet<>()
                 .with(new PersistentMap<String, String>()
                         .with("id", "2")
                         .with("address", "penvainia")
                         .with("name", "fred")
-                        .toRecord())
+                        .asRecord())
                 .with(new PersistentMap<String, String>()
                         .with("name", "george")
                         .with("id", "1")
                         .with("address", "montuky")
-                        .toRecord())
-                .toRecord();
+                        .asRecord())
+                .asRecord();
 
         final var differentBigStructure = new SetRecord<>(otherBigStructure.values().with(
                 new MapRecord<>(new PersistentMap<String, String>()
@@ -469,41 +447,16 @@ public class Scratch {
 
         final var differentDifferentBigStructure = differentBigStructure.values()
                 .with(new PersistentMap<>()
-                        .with("bob", PersistentSet.of("sally", "may").toRecord())
-                        .with("john", PersistentSet.of("super", "man").toRecord())
-                        .toRecord())
-                .toRecord();
+                        .with("bob", PersistentSet.of("sally", "may").asRecord())
+                        .with("john", PersistentSet.of("super", "man").asRecord())
+                        .asRecord())
+                .asRecord();
 
-//        print("[");
-//        for (final var record : bigStructure) {
-//            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
-//
-//        }
-//        print("]");
-//        print();
-//        print();
-//        print();
-//        print("[");
-//        for (final var record : otherBigStructure) {
-//            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
-//        }
-//        print("]");
-//        print();
-//        print();
-//        print();
-//        print("[");
-//        for (final var record : differentBigStructure) {
-//            print(record.stream().map(entry -> entry.getKey() + ": " + entry.getValue()));
-//        }
-//        print("]");
 
         System.out.println(bigStructure);
         System.out.println(otherBigStructure);
         System.out.println(differentBigStructure);
-
-        System.out.println(bigStructure);
-        System.out.println(otherBigStructure);
-        System.out.println(differentBigStructure);
+        System.out.println(differentDifferentBigStructure);
 
         print(Objects.equals(bigStructure, otherBigStructure));
         print(Objects.equals(bigStructure, differentBigStructure));

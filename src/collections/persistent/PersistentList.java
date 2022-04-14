@@ -114,8 +114,18 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
         return stream(true);
     }
 
-    public ListRecord<T> toRecord() {
+    public ListRecord<T> asRecord() {
         return new ListRecord<>(this);
+    }
+
+    private final Supplier<String> asString = new SoftLazy<>(() -> {
+        final var builder = new StringBuilder();
+        for (final var item : this) builder.append(item);
+        return builder.toString();
+    });
+
+    public String asString() {
+        return asString.get();
     }
 
     @Override
@@ -339,15 +349,15 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
     }
 
     public PersistentList<T> repeated(int times) {
-        // break factor cannot be less than 2. Any value >= 2 is ok.
-        final int breakFactor = Math.max(1, size() < PARTITION_SIZE ? PARTITION_SIZE / size() : PARTITION_SIZE);
+        // Cannot be less than 2, or it'll cause infinite recursion and a stack overflow.
+        final int breakingDenominator = Math.max(2, size() < PARTITION_SIZE ? PARTITION_SIZE / size() : PARTITION_SIZE);
 
         if (times < 0) return reversed().repeated(-times);
         if (times == 1) return this;
         if (times == 0) return new PersistentList<>();
 
         // base case
-        if (times <= breakFactor) {
+        if (times <= breakingDenominator) {
             var result = this;
             for (int i = 1; i < times; ++i) {
                 result = result.concat(this);
@@ -356,12 +366,12 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
         }
 
         // recursive case
-        final var quotient = times / breakFactor;
-        final var remainder = times % breakFactor;
+        final var quotient = times / breakingDenominator;
+        final var remainder = times % breakingDenominator;
         final var repeatedByQuotient = this.repeated(quotient);
         final var repeatedByRemainder = this.repeated(remainder);
 
-        return repeatedByQuotient.repeated(breakFactor).concat(repeatedByRemainder);
+        return repeatedByQuotient.repeated(breakingDenominator).concat(repeatedByRemainder);
     }
 
 

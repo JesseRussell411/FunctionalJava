@@ -62,7 +62,7 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
         return map.stream();
     }
 
-    private final Supplier<String> lazyToString = new SoftLazy<>(() -> {
+    private final Supplier<String> toString = new SoftLazy<>(() -> {
         final var builder = new StringBuilder();
         final var iter = iterator();
         builder.append("{ ");
@@ -80,6 +80,6 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
 
     @Override
     public String toString() {
-        return lazyToString.get();
+        return toString.get();
     }
 }

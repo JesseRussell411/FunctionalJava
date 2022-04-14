@@ -93,7 +93,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
         return new SelfEnumerator<>(entries, startAtEnd);
     }
 
-    public SetRecord<T> toRecord() {
+    public SetRecord<T> asRecord() {
         return new SetRecord<>(this);
     }
 

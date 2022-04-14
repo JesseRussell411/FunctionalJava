@@ -93,15 +93,13 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
         return list.stream();
     }
 
-    private final Supplier<String> lazyToString = new SoftLazy<>(() -> {
+    private final Supplier<String> toString = new SoftLazy<>(() -> {
         final var builder = new StringBuilder();
         final var iter = iterator();
 
         builder.append("[ ");
         if (iter.hasNext()) builder.append(iter.next());
-        while (iter.hasNext()) {
-            builder.append(", ").append(iter.next());
-        }
+        while (iter.hasNext()) builder.append(", ").append(iter.next());
         builder.append(" ]");
 
         return builder.toString();
@@ -109,6 +107,6 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
 
     @Override
     public String toString() {
-        return lazyToString.get();
+        return toString.get();
     }
 }

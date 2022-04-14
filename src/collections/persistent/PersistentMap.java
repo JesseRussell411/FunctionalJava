@@ -82,7 +82,7 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements Serializab
         return entries.stream(parallel);
     }
 
-    public MapRecord<K, V> toRecord() {
+    public MapRecord<K, V> asRecord() {
         return new MapRecord<>(this);
     }
 
