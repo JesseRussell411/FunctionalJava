@@ -8,5 +8,6 @@ public class VolatilePointer<T> {
     }
 
     public VolatilePointer() {
+        this(null);
     }
 }

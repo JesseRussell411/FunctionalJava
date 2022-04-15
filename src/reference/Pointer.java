@@ -8,5 +8,6 @@ public class Pointer<T> {
     }
 
     public Pointer() {
+        this(null);
     }
 }
