@@ -394,7 +394,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
     }
 
     private static class NodeEnumerator<T extends Comparable<T>> implements BiDirectionalEnumerator<Node<T>> {
-        final Stack<Node<T>> location = new Stack<>();
+        final LinkedList<Node<T>> location = new LinkedList<>();
         boolean beforeStart;
         boolean afterEnd;
 
@@ -415,13 +415,13 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
         }
 
         private void drillDownLeft() {
-            while (location.peek().left != null) {
+            while (Objects.requireNonNull(location.peek()).left != null) {
                 location.push(location.peek().left);
             }
         }
 
         private void drillDownRight() {
-            while (location.peek().right != null) {
+            while (Objects.requireNonNull(location.peek()).right != null) {
                 location.push(location.peek().right);
             }
         }
