@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 
 class MemoizedBiFunction<T, U, R> implements BiFunction<T, U, R> {
@@ -336,26 +337,22 @@ public class Scratch {
         stop = System.currentTimeMillis();
         System.out.println("Stream sorting of Pers list:" + (stop - start));
 
-        start = System.currentTimeMillis();
-        final var sortedPints = randIntPList1_000_000.sorted(comp);
-        stop = System.currentTimeMillis();
-        System.out.println("Stream sorting with crap:" + (stop - start));
 
-//        final int i = 500_000;
-//
-//
-//        start = System.currentTimeMillis();
-//        final var withAddition_normal_list = Stream.concat(Stream.concat(randIntList1_000_000.stream().limit(i), Stream.of(-2)), StreamSupport.stream(Spliterators.spliteratorUnknownSize(randIntList1_000_000.listIterator(i), 0), true)).toList();
-//        stop = System.currentTimeMillis();
-//        System.out.println("insertion into list (in place):" + (stop - start));
-//
-//        start = System.currentTimeMillis();
-//        final var withAddition = randIntPList1_000_000.withAddition(i, -2);
-//        stop = System.currentTimeMillis();
-//        System.out.println("insertion into plist:" + (stop - start));
-//
-//        print(withAddition_normal_list.get(i));
-//        print(withAddition.get(i));
+        final int i = 5000;
+
+
+        start = System.currentTimeMillis();
+        final var withAddition_normal_list = Stream.concat(Stream.concat(randIntList1_000_000.stream().limit(i), Stream.of(-2)), StreamSupport.stream(Spliterators.spliteratorUnknownSize(randIntList1_000_000.listIterator(i), 0), true)).toList();
+        stop = System.currentTimeMillis();
+        System.out.println("insertion into list (out of place):" + (stop - start));
+
+        start = System.currentTimeMillis();
+        final var withAddition = randIntPList1_000_000.withAddition(i, -2);
+        stop = System.currentTimeMillis();
+        System.out.println("insertion into plist:" + (stop - start));
+
+        print(withAddition_normal_list.get(i));
+        print(withAddition.get(i));
         final var promiseChain = new Promise<>(
                 settle1 -> settle1.resolve(new Promise<>(
                         settle2 -> settle2.resolve(new Promise<>(
@@ -463,7 +460,8 @@ public class Scratch {
 
 
         final var plist123 = PersistentList.of(1, 2, 3).repeated(100_000_000 / 3);
-        final var list123 = plist123.stream().toList();
+        final var list123 = new ArrayList<Integer>(plist123.size());
+        list123.addAll(plist123);
 
         long ptotal = 0;
         long total = 0;

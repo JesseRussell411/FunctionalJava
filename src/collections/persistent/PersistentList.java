@@ -1,5 +1,6 @@
 package collections.persistent;
 
+import collections.ArrayStack;
 import collections.adapters.ArrayAsList;
 import collections.iteration.IterableUtils;
 import collections.iteration.adapters.ArrayIterator;
@@ -23,6 +24,14 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
     private static final Object[] EMPTY_ARRAY = new Object[0];
     private static final Leaf EMPTY_LEAF = new Leaf(EMPTY_ARRAY);
     private static final int PARTITION_SIZE = 32;
+
+    static {
+        assert PARTITION_SIZE >= 1;
+        assert EMPTY_ARRAY != null;
+        assert EMPTY_ARRAY.length == 0;
+        assert EMPTY_LEAF != null;
+        assert EMPTY_LEAF.itemCount() == 0;
+    }
 
     @NotNull
     private final Node root;
@@ -854,7 +863,7 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
                 return new LeafEnumerator(root, true);
             }
 
-            final var location = new LinkedList<Node>();
+            final var location = new ArrayStack<Node>();
             int locationIndex = 0;
             int indexInCurrentNode = initialIndex;
 
@@ -963,18 +972,18 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
     }
 
     private static class LeafEnumerator implements IndexedBiDirectionalEnumerator<Leaf> {
-//        private final Stack<Node> location;
-        private final LinkedList<Node> location;
+        //        private final Stack<Node> location;
+        private final ArrayStack<Node> location;
         private int locationIndex;
         private final Node root;
 
         public LeafEnumerator(Node root, boolean startAndEnd) {
             this.root = Objects.requireNonNull(root);
             locationIndex = startAndEnd ? root.leafCount() : -1;
-            location = new LinkedList<>();
+            location = new ArrayStack<>(root.depth());
         }
 
-        public LeafEnumerator(LinkedList<Node> location, int locationIndex, Node root) {
+        public LeafEnumerator(ArrayStack<Node> location, int locationIndex, Node root) {
             this.location = Objects.requireNonNull(location);
             this.locationIndex = locationIndex;
             this.root = Objects.requireNonNull(root);
