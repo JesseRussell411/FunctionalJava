@@ -483,7 +483,6 @@ public class Scratch {
         stop = System.currentTimeMillis();
         System.out.println("Iteration of persis list took: " + (stop - start) + " ms");
 
-        final var s = new LinkedList<Integer>();
 
 
         try (final var input = new Scanner(System.in)) {
