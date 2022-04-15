@@ -882,13 +882,17 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
 
         private boolean advanceLeafNext() {
             if (!leafEnumerator.moveNext()) return false;
-            if (leafEnumerator.current().items.length == 0) return advanceLeafNext();
+            final var current = leafEnumerator.current();
+            if (current == null) return false;
+            if (current.items.length == 0) return advanceLeafNext();
             return true;
         }
 
         private boolean advanceLeafPrevious() {
             if (!leafEnumerator.movePrevious()) return false;
-            if (leafEnumerator.current().items.length == 0) return advanceLeafPrevious();
+            final var current = leafEnumerator.current();
+            if (current == null) return false;
+            if (current.items.length == 0) return advanceLeafPrevious();
             return true;
         }
 
