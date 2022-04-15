@@ -268,7 +268,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
 
         if (n.balanceFactor < -1) {
             if (balanceFactorOf(n.left) <= 0) {
-                // left heavy with left heavy child
+                // left heavy with non-right heavy child
                 return rotatedRight(n);
             } else {
                 // left heavy with right heavy child
@@ -279,7 +279,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
             }
         } else if (n.balanceFactor > 1) {
             if (balanceFactorOf(n.right) >= 0) {
-                // right heavy with right heavy child
+                // right heavy with non-left heavy child
                 return rotatedLeft(n);
             } else {
                 // right heavy with left heavy child
@@ -335,7 +335,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
         final Node<T> right;
         @NotNull
         final T entry;
-        // balance factor can't be greater than 2 or less than -2
+        // balance factor can't be greater than 3 or less than -3
         final byte balanceFactor;
         // depth can't be greater than log_2(2^31) = 31
         final byte depth;
