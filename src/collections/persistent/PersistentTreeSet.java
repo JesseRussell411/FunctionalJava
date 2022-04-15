@@ -235,7 +235,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
             // by moving that value to this node.
             final var relativeLargest_ref = new Pointer<Node<T>>();
             final var newRight = extractLargestRelativeTo(n.right, relativeLargest_ref);
-            return new Node<>(n.left, newRight, relativeLargest_ref.current.entry);
+            return new Node<>(n.left, newRight, relativeLargest_ref.current.entry).balanced();
         }
     }
 
