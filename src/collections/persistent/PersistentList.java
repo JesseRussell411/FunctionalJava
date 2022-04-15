@@ -854,7 +854,7 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
                 return new LeafEnumerator(root, true);
             }
 
-            final var location = new Stack<Node>();
+            final var location = new LinkedList<Node>();
             int locationIndex = 0;
             int indexInCurrentNode = initialIndex;
 
@@ -959,17 +959,18 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
     }
 
     private static class LeafEnumerator implements IndexedBiDirectionalEnumerator<Leaf> {
-        private final Stack<Node> location;
+//        private final Stack<Node> location;
+        private final LinkedList<Node> location;
         private int locationIndex;
         private final Node root;
 
         public LeafEnumerator(Node root, boolean startAndEnd) {
             this.root = Objects.requireNonNull(root);
             locationIndex = startAndEnd ? root.leafCount() : -1;
-            location = new Stack<>();
+            location = new LinkedList<>();
         }
 
-        public LeafEnumerator(Stack<Node> location, int locationIndex, Node root) {
+        public LeafEnumerator(LinkedList<Node> location, int locationIndex, Node root) {
             this.location = Objects.requireNonNull(location);
             this.locationIndex = locationIndex;
             this.root = Objects.requireNonNull(root);
