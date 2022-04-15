@@ -462,6 +462,30 @@ public class Scratch {
         print(Objects.equals(bigStructure, differentBigStructure));
 
 
+        final var plist123 = PersistentList.of(1, 2, 3).repeated(100_000_000 / 3);
+        final var list123 = plist123.stream().toList();
+
+        long ptotal = 0;
+        long total = 0;
+
+        start = System.currentTimeMillis();
+        for (final var n : list123) {
+            total += n;
+        }
+        stop = System.currentTimeMillis();
+
+        System.out.println("Iteration of normal list took: " + (stop - start) + " ms");
+
+        start = System.currentTimeMillis();
+        for (final var n : plist123) {
+            ptotal += n;
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("Iteration of persis list took: " + (stop - start) + " ms");
+
+        final var s = new LinkedList<Integer>();
+
+
         try (final var input = new Scanner(System.in)) {
             while (true) {
                 final var deferred = Promise.<Integer>deferred();
