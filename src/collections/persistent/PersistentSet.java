@@ -86,7 +86,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
     }
 
     public Stream<T> stream() {
-        return stream(true);
+        return stream(false);
     }
 
     public BiDirectionalEnumerator<T> enumerator(boolean startAtEnd) {

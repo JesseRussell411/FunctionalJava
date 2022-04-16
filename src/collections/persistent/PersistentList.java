@@ -21,15 +21,15 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class PersistentList<T> extends AbstractList<T> implements List<T>, IndexedBiDirectionalEnumerable<T>, java.io.Serializable {
+    @NotNull
     private static final Object[] EMPTY_ARRAY = new Object[0];
+    @NotNull
     private static final Leaf EMPTY_LEAF = new Leaf(EMPTY_ARRAY);
     private static final int PARTITION_SIZE = 32;
 
     static {
         assert PARTITION_SIZE >= 1;
-        assert EMPTY_ARRAY != null;
         assert EMPTY_ARRAY.length == 0;
-        assert EMPTY_LEAF != null;
         assert EMPTY_LEAF.itemCount() == 0;
     }
 
@@ -120,7 +120,7 @@ public class PersistentList<T> extends AbstractList<T> implements List<T>, Index
 
     @Override
     public Stream<T> stream() {
-        return stream(true);
+        return stream(false);
     }
 
     public ListRecord<T> asRecord() {

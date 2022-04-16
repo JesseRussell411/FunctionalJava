@@ -75,7 +75,7 @@ public class PersistentMap<K, V> extends AbstractMap<K, V> implements Serializab
     }
 
     public Stream<Entry<K, V>> stream() {
-        return stream(true);
+        return stream(false);
     }
 
     public Stream<Entry<K, V>> stream(boolean parallel) {

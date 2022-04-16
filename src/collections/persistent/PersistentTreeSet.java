@@ -390,7 +390,7 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
     }
 
     public Stream<T> stream() {
-        return stream(true);
+        return stream(false);
     }
 
     private static class NodeEnumerator<T extends Comparable<T>> implements BiDirectionalEnumerator<Node<T>> {
