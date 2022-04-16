@@ -19,11 +19,9 @@ public class Lazy<T> implements Supplier<T> {
         synchronized (this) {
             if (cache.isSet()) return cache.get().get();
 
+            T result;
             try {
-                final var result = original.get();
-                cache.set(() -> result);
-                original = null;
-                return result;
+                result = original.get();
             } catch (RuntimeException error) {
                 cache.set(() -> {
                     throw error;
@@ -31,6 +29,10 @@ public class Lazy<T> implements Supplier<T> {
                 original = null;
                 throw error;
             }
+
+            cache.set(() -> result);
+            original = null;
+            return result;
         }
     }
 

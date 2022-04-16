@@ -25,15 +25,17 @@ public class SoftLazy<T> implements Supplier<T> {
             if (fromCache != null) return fromCache.current;
             if (exceptionCache != null) throw exceptionCache;
 
+            T result;
             try {
-                final var result = original.get();
-                cache = new SoftReference<>(new FinalPointer<>(result));
-                return result;
+                result = original.get();
             } catch (RuntimeException error) {
                 exceptionCache = error;
                 original = null;
                 throw error;
             }
+            
+            cache = new SoftReference<>(new FinalPointer<>(result));
+            return result;
         }
     }
 }

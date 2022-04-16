@@ -1,10 +1,7 @@
 package memoization.pure.lazy;
 
 import reference.FinalPointer;
-import reference.NullableWeakReference;
-import reference.VolatileUntilSet;
 
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -28,15 +25,17 @@ public class WeakLazy<T> implements Supplier<T> {
             if (fromCache != null) return fromCache.current;
             if (exceptionCache != null) throw exceptionCache;
 
+            T result;
             try {
-                final var result = original.get();
-                cache = new WeakReference<>(new FinalPointer<>(result));
-                return result;
+                result = original.get();
             } catch (RuntimeException error) {
                 exceptionCache = error;
                 original = null;
                 throw error;
             }
+
+            cache = new WeakReference<>(new FinalPointer<>(result));
+            return result;
         }
     }
 }
