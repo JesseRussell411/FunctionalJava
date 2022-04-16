@@ -9,7 +9,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Memoization decorator for the {@link Function} interface. It is assumed that the original function is pure;
+ * Memoization decorator for {@link Function}. It is assumed that the original function is pure;
  * ie: no side effects and no mutable dependencies; the result is determined only by the input parameter, t.
  * @param <T> Input type.
  * @param <R> Return type.
