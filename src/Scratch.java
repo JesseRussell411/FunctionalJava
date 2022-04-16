@@ -459,7 +459,7 @@ public class Scratch {
         print(Objects.equals(bigStructure, differentBigStructure));
 
 
-        final var plist123 = PersistentList.of(1, 2, 3).repeated(100_000_000 / 3);
+        final var plist123 = PersistentList.of(1, 2, 3).repeated(10_000_000 / 3);
         final var list123 = new ArrayList<Integer>(plist123.size());
         list123.addAll(plist123);
 
@@ -480,6 +480,8 @@ public class Scratch {
         }
         stop = System.currentTimeMillis();
         System.out.println("Iteration of persis list took: " + (stop - start) + " ms");
+        System.out.println(ptotal);
+        System.out.println(total);
 
 
 
