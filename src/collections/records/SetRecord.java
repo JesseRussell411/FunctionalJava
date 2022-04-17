@@ -1,11 +1,13 @@
 package collections.records;
 
 import collections.persistent.PersistentSet;
+import collections.reference.WeakIdentityConcurrentHashMap;
 import memoization.pure.lazy.Lazy;
 import memoization.pure.lazy.SoftLazy;
 
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -14,6 +16,7 @@ import java.util.stream.Stream;
 
 public class SetRecord<T> implements Iterable<T>, Serializable {
     private final PersistentSet<T> set;
+    private final Map<SetRecord<?>, Boolean> equalityCache = new WeakIdentityConcurrentHashMap<>();
 
     public SetRecord(PersistentSet<T> set) {
         Objects.requireNonNull(set);
@@ -57,16 +60,38 @@ public class SetRecord<T> implements Iterable<T>, Serializable {
     @Override
     public boolean equals(Object o) {
         // TODO equality caching
+        // check...
+        // instances
         if (this == o) return true;
+
+        // type
         if (!(o instanceof SetRecord<?> other)) return false;
+
+        // size
         if (set.size() == 0 && other.set.size() == 0) return true;
         if (set.size() != other.set.size()) return false;
-        if (hashCode() != other.hashCode()) return false;
 
-        for (final var value : set) {
-            if (!other.set.contains(value)) return false;
+        // cache
+        final var fromCache = equalityCache.get(other);
+        if (fromCache != null) return fromCache;
+        else {
+            final var fromOtherCache = other.equalityCache.get(this);
+            if (fromOtherCache != null) return fromOtherCache;
         }
 
+        // hash
+        if (hashCode() != other.hashCode()) return false;
+
+        // contents
+        for (final var value : set) {
+            if (!other.set.contains(value)) {
+                equalityCache.put(other, false);
+                return false;
+            }
+        }
+        // equals = true
+
+        equalityCache.put(other, true);
         return true;
     }
 

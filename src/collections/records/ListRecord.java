@@ -93,14 +93,12 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
         while (iter.hasNext() && otherIter.hasNext()) {
             if (!Objects.equals(iter.next(), otherIter.next())) {
                 equalityCache.put(other, false);
-                other.equalityCache.put(this, false);
                 return false;
             }
         }
         // equals = true
 
         equalityCache.put(other, true);
-        other.equalityCache.put(this, true);
         return true;
     }
 
