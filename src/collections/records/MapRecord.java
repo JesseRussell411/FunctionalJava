@@ -41,7 +41,6 @@ public class MapRecord<K, V> implements Iterable<Map.Entry<K, V>>, Serializable 
 
     @Override
     public boolean equals(Object o) {
-        // TODO equality caching
         // check...
         // instances
         if (this == o) return true;

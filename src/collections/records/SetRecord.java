@@ -59,7 +59,6 @@ public class SetRecord<T> implements Iterable<T>, Serializable {
 
     @Override
     public boolean equals(Object o) {
-        // TODO equality caching
         // check...
         // instances
         if (this == o) return true;

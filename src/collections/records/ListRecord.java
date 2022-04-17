@@ -61,7 +61,6 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        // TODO equality caching
         // check...
         // instance
         if (this == obj) return true;
