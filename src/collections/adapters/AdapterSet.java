@@ -7,12 +7,12 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class SetAdapter<A, B> extends AbstractSet<B> {
+public class AdapterSet<A, B> extends AbstractSet<B> {
     private final Set<A> base;
     private final Function<A, B> aToB;
     private final Function<B, A> bToA;
 
-    public SetAdapter(Set<A> base, Function<A, B> aToB, Function<B, A> bToA) {
+    public AdapterSet(Set<A> base, Function<A, B> aToB, Function<B, A> bToA) {
         this.base = Objects.requireNonNull(base);
         this.aToB = Objects.requireNonNull(aToB);
         this.bToA = Objects.requireNonNull(bToA);

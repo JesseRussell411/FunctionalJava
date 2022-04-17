@@ -6,13 +6,14 @@ import memoization.pure.lazy.SoftLazy;
 
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 // TODO add no-caching flag
 
-public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Serializable {
+public class MapRecord<K, V> implements Iterable<Map.Entry<K, V>>, Serializable {
     private final PersistentMap<K, V> map;
 
     public PersistentMap<K, V> entries() {
@@ -23,9 +24,9 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
         this.map = map;
     }
 
-    private final Supplier<Integer> lazyHash = new Lazy<>(() -> {
+    private final Supplier<Integer> getHash = new Lazy<>(() -> {
         int hash = 0;
-        for (final var entry : entries().getEntries()) {
+        for (final var entry : entries().entrySet()) {
             hash ^= Objects.hash(entry.getKey(), entry.getValue());
         }
         return hash;
@@ -33,7 +34,7 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
 
     @Override
     public int hashCode() {
-        return lazyHash.get();
+        return getHash.get();
     }
 
     @Override
@@ -46,20 +47,26 @@ public class MapRecord<K, V> implements Iterable<PersistentMap.Entry<K, V>>, Ser
         if (hashCode() != other.hashCode()) return false;
 
         for (final var entry : map.entrySet()) {
-            final var otherEntry = other.map.getEntry(entry.getKey());
-            if (otherEntry == null) return false;
-            if (!Objects.equals(entry.getValue(), otherEntry.value())) return false;
+            final var value = entry.getValue();
+            final var key = entry.getKey();
+            if (value == null) {
+                if (other.entries().get(key) != null || !other.entries().containsKey(key)) {
+                    return false;
+                }
+            } else if (!Objects.equals(value, other.entries().get(key))) {
+                return false;
+            }
         }
 
         return true;
     }
 
     @Override
-    public Iterator<PersistentMap.Entry<K, V>> iterator() {
-        return map.getEntries().iterator();
+    public Iterator<Map.Entry<K, V>> iterator() {
+        return map.entrySet().iterator();
     }
 
-    public Stream<PersistentMap.Entry<K, V>> stream() {
+    public Stream<Map.Entry<K, V>> stream() {
         return map.stream();
     }
 

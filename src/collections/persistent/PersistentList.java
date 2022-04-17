@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class PersistentList<T> extends AbstractList<T> implements List<T>, IndexedBiDirectionalEnumerable<T>, java.io.Serializable {
+public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirectionalEnumerable<T>, java.io.Serializable {
     @NotNull
     private static final Object[] EMPTY_ARRAY = new Object[0];
     @NotNull

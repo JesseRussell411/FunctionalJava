@@ -12,9 +12,9 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializable {
+public class PersistentSet<T> extends AbstractSet<T> implements Enumerable<T>, java.io.Serializable {
     @NotNull
-    private final PersistentTreeSet<Entry<T>> entries;
+    private final PersistentTreeSet<Group<T>> entries;
     private final int size;
 
     @SafeVarargs
@@ -22,7 +22,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
         return new PersistentSet<T>().withMany(items);
     }
 
-    private PersistentSet(@NotNull PersistentTreeSet<Entry<T>> entries, int size) {
+    private PersistentSet(@NotNull PersistentTreeSet<Group<T>> entries, int size) {
         this.entries = entries;
         this.size = size;
         assert entries != null;
@@ -62,7 +62,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
 
     @Override
     public boolean contains(Object o) {
-        final var entry = getEntry(Objects.hashCode(o));
+        final var entry = getGroup(Objects.hashCode(o));
         return entry != null && entry.values.contains(o);
     }
 
@@ -97,12 +97,12 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
         return new SetRecord<>(this);
     }
 
-    private Entry<T> getEntry(int hash) {
-        return entries.get(new Entry<>(hash, null));
+    private Group<T> getGroup(int hash) {
+        return entries.get(new Group<>(hash, null));
     }
 
     public T get(T value) {
-        final var entry = getEntry(Objects.hashCode(value));
+        final var entry = getGroup(Objects.hashCode(value));
         if (entry != null) {
             return entry.values.getFirstOccurrence(value);
         } else return null;
@@ -110,7 +110,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
 
     public PersistentSet<T> with(T value) {
         final var hash = Objects.hashCode(value);
-        final var existingEntry = getEntry(hash);
+        final var existingEntry = getGroup(hash);
 
         if (existingEntry != null) {
             final var newEntry = existingEntry.with(value);
@@ -119,7 +119,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
             return new PersistentSet<>(entries.with(newEntry), newSize);
         } else {
             return new PersistentSet<>(
-                    entries.with(new Entry<>(hash, PersistentList.of(value))),
+                    entries.with(new Group<>(hash, PersistentList.of(value))),
                     size + 1);
         }
     }
@@ -146,7 +146,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
 
     public PersistentSet<T> without(T value) {
         final var hash = Objects.hashCode(value);
-        final var existingEntry = getEntry(hash);
+        final var existingEntry = getGroup(hash);
 
         if (existingEntry != null) {
             final var newEntry = existingEntry.without(value);
@@ -182,33 +182,34 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
         return withoutMany(new ArrayIterator<>(values));
     }
 
-    private static class Entry<T> implements Comparable<Entry<T>>, java.io.Serializable {
+    private static class Group<T> implements Comparable<Group<T>>, java.io.Serializable {
         final int key;
         final PersistentList<T> values;
 
-        public Entry(int key, PersistentList<T> values) {
+        public Group(int key, PersistentList<T> values) {
             this.key = key;
             this.values = values;
             assert this.values != null;
         }
 
-        Entry<T> with(T value) {
-            return new Entry<>(key, values.with(value));
+        Group<T> with(T value) {
+            return new Group<>(key, values.with(value));
         }
 
-        Entry<T> without(T value) {
-            return new Entry<>(key, values.withoutFirstOccurrence(value));
+        Group<T> without(T value) {
+            return new Group<>(key, values.withoutFirstOccurrence(value));
         }
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof PersistentSet.Entry<?> other) {
+            if (this == o) return true;
+            if (o instanceof Group<?> other) {
                 return Objects.equals(key, other.key);
             } else return false;
         }
 
         @Override
-        public int compareTo(Entry<T> o) {
+        public int compareTo(Group<T> o) {
             return Integer.compare(
                     Objects.hashCode(key),
                     Objects.hashCode(o.key));
@@ -216,10 +217,10 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
     }
 
     public static class SelfEnumerator<T> implements BiDirectionalEnumerator<T> {
-        private final BiDirectionalEnumerator<Entry<T>> entries;
+        private final BiDirectionalEnumerator<Group<T>> entries;
         private BiDirectionalEnumerator<T> localEnumerator = null;
 
-        private SelfEnumerator(PersistentTreeSet<Entry<T>> entries, boolean startAtEnd) {
+        private SelfEnumerator(PersistentTreeSet<Group<T>> entries, boolean startAtEnd) {
             this.entries = entries.enumerator(startAtEnd);
         }
 
@@ -261,7 +262,7 @@ public class PersistentSet<T> implements Enumerable<T>, Set<T>, java.io.Serializ
     }
 
     static class Assertions {
-        static <T> int actualSize(PersistentTreeSet<Entry<T>> entries) {
+        static <T> int actualSize(PersistentTreeSet<Group<T>> entries) {
             int totalSize = 0;
             for (final var entry : entries) {
                 totalSize += entry.values.size();

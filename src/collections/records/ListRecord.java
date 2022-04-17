@@ -1,10 +1,12 @@
 package collections.records;
 
 import collections.persistent.PersistentList;
+import collections.reference.WeakIdentityConcurrentHashMap;
 import memoization.pure.lazy.Lazy;
 import memoization.pure.lazy.SoftLazy;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -12,6 +14,7 @@ import java.util.stream.Stream;
 // TODO add no-caching flag
 
 public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
+    private final Map<ListRecord<?>, Boolean> equalityCache = new WeakIdentityConcurrentHashMap<>();
     private final PersistentList<T> list;
 
     public ListRecord() {
@@ -59,20 +62,45 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
     @Override
     public boolean equals(Object obj) {
         // TODO equality caching
+        // check...
+        // instance
         if (this == obj) return true;
+
+        // type
         if (!(obj instanceof ListRecord<?> other)) return false;
 
+        // internals
         if (list == other.list) return true;
+
+        // size
         if (isEmpty() && other.isEmpty()) return true;
         if (size() != other.size()) return false;
 
+        // cache
+        final var fromCache = equalityCache.get(other);
+        if (fromCache != null) return fromCache;
+        else {
+            final var fromOtherCache = other.equalityCache.get(this);
+            if (fromOtherCache != null) return fromOtherCache;
+        }
+
+        // hash
         if (hashCode() != other.hashCode()) return false;
 
+        // full contents
         final var iter = iterator();
         final var otherIter = other.iterator();
         while (iter.hasNext() && otherIter.hasNext()) {
-            if (!Objects.equals(iter.next(), otherIter.next())) return false;
+            if (!Objects.equals(iter.next(), otherIter.next())) {
+                equalityCache.put(other, false);
+                other.equalityCache.put(this, false);
+                return false;
+            }
         }
+        // equals = true
+
+        equalityCache.put(other, true);
+        other.equalityCache.put(this, true);
         return true;
     }
 

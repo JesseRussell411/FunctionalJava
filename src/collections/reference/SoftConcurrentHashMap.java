@@ -1,6 +1,6 @@
-package collections;
+package collections.reference;
 
-import collections.adapters.SetAdapter;
+import collections.adapters.AdapterSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.Reference;
@@ -11,33 +11,32 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class SoftConcurrentHashMap<K, V> extends AbstractMap<K, V> {
-    private final ConcurrentHashMap<Reference<? extends K>, V> data = new ConcurrentHashMap<>();
-    private final ReferenceQueue<K> dataQueue = new ReferenceQueue<>();
-    private final Lock queueLock = new ReentrantLock();
+    private final Map<Reference<? extends K>, V> data = new ConcurrentHashMap<>();
+    private final ReferenceQueue<K> possiblyCollected = new ReferenceQueue<>();
 
     @NotNull
     @Override
     public Set<Entry<K, V>> entrySet() {
         prune();
-        return new SetAdapter<>(
+        return new AdapterSet<>(
                 data.entrySet(),
                 a -> new SimpleEntry<>(a.getKey().get(), a.getValue()),
                 b -> Map.entry(new Key<>(b.getKey()), b.getValue()));
     }
 
     @Override
-    public V put(K key, V value) {
+    public V put(@NotNull K key, V value) {
+        Objects.requireNonNull(key);
         prune();
-        return data.put(new Key<>(key, dataQueue), value);
+        return data.put(new Key<>(key, possiblyCollected), value);
     }
 
     @Override
     public V get(Object key) {
         prune();
+        if (key == null) return null;
         return data.get(new Key<>(key));
     }
 
@@ -66,16 +65,11 @@ public class SoftConcurrentHashMap<K, V> extends AbstractMap<K, V> {
     }
 
     private void prune() {
-        if (queueLock.tryLock()) {
-            try {
-                for (Reference<? extends K> ref; (ref = dataQueue.poll()) != null; ) {
-                    if (ref.get() == null) data.remove(ref);
-                }
-            } finally {
-                queueLock.unlock();
-            }
+        for (Reference<? extends K> ref; (ref = possiblyCollected.poll()) != null; ) {
+            if (ref.get() == null) data.remove(ref);
         }
     }
+
 
     private static class Key<K> extends SoftReference<K> {
         public final K kHolder;
@@ -101,6 +95,7 @@ public class SoftConcurrentHashMap<K, V> extends AbstractMap<K, V> {
             return hashCode;
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (this == obj) return true;
 

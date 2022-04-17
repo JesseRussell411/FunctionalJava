@@ -1,11 +1,11 @@
 package collections.persistent;
 
-import annotations.UnsupportedOperation;
+import collections.ArrayStack;
 import collections.CollectionUtils;
 import collections.iteration.adapters.ArrayIterator;
 import collections.iteration.adapters.EnumeratorIterator;
 import collections.iteration.adapters.ReversedEnumeratorIterator;
-import collections.iteration.enumerable.Enumerable;
+import collections.iteration.enumerable.BiDirectionalEnumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
 import org.jetbrains.annotations.NotNull;
 import reference.Pointer;
@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enumerable<T>, java.io.Serializable {
+public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> implements BiDirectionalEnumerable<T>, java.io.Serializable {
     private final Node<T> root;
     private final int size;
 
@@ -394,13 +394,15 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
     }
 
     private static class NodeEnumerator<T extends Comparable<T>> implements BiDirectionalEnumerator<Node<T>> {
-        final LinkedList<Node<T>> location = new LinkedList<>();
+        @NotNull
+        final ArrayStack<Node<T>> location;
         boolean beforeStart;
         boolean afterEnd;
 
 
         NodeEnumerator(Node<T> root, boolean startAndEnd) {
             if (root != null) {
+                location = new ArrayStack<>(root.depth);
                 location.push(root);
                 if (startAndEnd) {
                     drillDownRight();
@@ -411,6 +413,8 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
                     beforeStart = true;
                     afterEnd = false;
                 }
+            } else {
+                location = new ArrayStack<>(0);
             }
         }
 
@@ -548,43 +552,5 @@ public class PersistentTreeSet<T extends Comparable<T>> implements Set<T>, Enume
             assert correctSize(set);
             return set;
         }
-
-    }
-
-    // unsupported interface methods
-    @Override
-    @UnsupportedOperation
-    public boolean add(T t) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    @UnsupportedOperation
-    public boolean remove(Object o) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    @UnsupportedOperation
-    public boolean addAll(Collection<? extends T> c) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    @UnsupportedOperation
-    public boolean retainAll(Collection<?> c) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    @UnsupportedOperation
-    public boolean removeAll(Collection<?> c) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    @UnsupportedOperation
-    public void clear() {
-        throw new UnsupportedOperationException();
     }
 }
