@@ -5,6 +5,7 @@ import collections.persistent.PersistentSet;
 import collections.persistent.PersistentTreeSet;
 import collections.records.MapRecord;
 import collections.records.SetRecord;
+import collections.reference.WeakConcurrentHashMap;
 import concurrency.Promise;
 import memoization.pure.function.MemoizedFunction;
 
@@ -483,6 +484,12 @@ public class Scratch {
         System.out.println(ptotal);
         System.out.println(total);
 
+        final var whm = new WeakConcurrentHashMap<Integer, Integer>();
+        whm.put(8, 3);
+        System.out.println(whm.get(null));
+        whm.put(null, 3);
+        System.out.println(whm.get(null));
+        System.out.println(whm.size());
 
 
         try (final var input = new Scanner(System.in)) {

@@ -399,7 +399,6 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
         boolean beforeStart;
         boolean afterEnd;
 
-
         NodeEnumerator(Node<T> root, boolean startAndEnd) {
             if (root != null) {
                 location = new ArrayStack<>(root.depth);
