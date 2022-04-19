@@ -15,9 +15,14 @@ import java.util.stream.Stream;
 
 public class MemoizedRoutine<T, R> implements BiFunction<T, ListRecord<?>, R> {
     @NotNull
-    private final Map<Context<T>, VolatileUntilSet<Supplier<R>>> cache = new ConcurrentHashMap<>();
+    private final Map<Context<T>, VolatileUntilSet<Supplier<R>>> cache = buildCache();
     @NotNull
     private final Function<T, R> subRoutine;
+
+    @NotNull
+    protected Map<Context<T>, VolatileUntilSet<Supplier<R>>> buildCache() {
+        return new ConcurrentHashMap<>();
+    }
 
     public MemoizedRoutine(@NotNull Function<T, R> subRoutine) {
         Objects.requireNonNull(subRoutine);
@@ -31,7 +36,7 @@ public class MemoizedRoutine<T, R> implements BiFunction<T, ListRecord<?>, R> {
     }
 
     @Override
-    public R apply(T argument, ListRecord<?> dependencies) {
+    public R apply(T argument, @NotNull ListRecord<?> dependencies) {
         Objects.requireNonNull(dependencies);
         final var result = getCachedResult(new Context<>(argument, dependencies));
 
@@ -43,7 +48,7 @@ public class MemoizedRoutine<T, R> implements BiFunction<T, ListRecord<?>, R> {
         synchronized (result) {
             cacheValue = result.get();
             if (cacheValue != null) return cacheValue.get();
-
+            // result is not cached
             // run the subroutine
             R newValue;
             try {
@@ -127,6 +132,6 @@ public class MemoizedRoutine<T, R> implements BiFunction<T, ListRecord<?>, R> {
         return isCached(argument, new ListRecord<>(dependencies));
     }
 
-    record Context<T>(T argument, ListRecord<?> dependencies) {
+    protected record Context<T>(T argument, ListRecord<?> dependencies) {
     }
 }
