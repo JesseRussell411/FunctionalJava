@@ -1,3 +1,4 @@
+import collections.ArrayStack;
 import collections.adapters.ArrayAsList;
 import collections.persistent.PersistentList;
 import collections.persistent.PersistentMap;
@@ -460,12 +461,30 @@ public class Scratch {
         print(Objects.equals(bigStructure, differentBigStructure));
 
 
-        final var plist123 = PersistentList.of(1, 2, 3).repeated(10_000_000 / 3);
+        final var plist123 = PersistentList.of(1, 2, 3).repeated(5_000_000 / 3);
         final var list123 = new ArrayList<Integer>(plist123.size());
         list123.addAll(plist123);
+        final var arr123 = list123.toArray(new Integer[0]);
+        final var llist123 = new LinkedList<Integer>();
+        llist123.addAll(plist123);
+        for(final var n : plist123){}
+        for(final var n : list123){}
+        for(final var n : llist123){}
+        for(final var n : arr123){}
+        for(final var n : plist123){}
+        for(final var n : list123){}
+        for(final var n : llist123){}
+        for(final var n : arr123){}
+        for(final var n : plist123){}
+        for(final var n : list123){}
+        for(final var n : llist123){}
+        for(final var n : arr123){}
+
 
         long ptotal = 0;
         long total = 0;
+        long atotal = 0;
+        long ltotal = 0;
 
         start = System.currentTimeMillis();
         for (final var n : list123) {
@@ -475,6 +494,23 @@ public class Scratch {
 
         System.out.println("Iteration of normal list took: " + (stop - start) + " ms");
 
+
+        start = System.currentTimeMillis();
+        for (final var n : arr123) {
+            atotal += n;
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("Iteration of normal array took: " + (stop - start) + " ms");
+
+
+        start = System.currentTimeMillis();
+        for (final var n : llist123) {
+            ltotal += n;
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("Iteration of linked list took: " + (stop - start) + " ms");
+
+
         start = System.currentTimeMillis();
         for (final var n : plist123) {
             ptotal += n;
@@ -483,6 +519,8 @@ public class Scratch {
         System.out.println("Iteration of persis list took: " + (stop - start) + " ms");
         System.out.println(ptotal);
         System.out.println(total);
+        System.out.println(atotal);
+        System.out.println(ltotal);
 
         final var whm = new WeakConcurrentHashMap<Integer, Integer>();
         whm.put(8, 3);
