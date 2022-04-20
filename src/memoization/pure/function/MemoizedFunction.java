@@ -1,5 +1,6 @@
 package memoization.pure.function;
 
+import collections.decorators.VolatileNullSafeMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -26,7 +27,7 @@ public class MemoizedFunction<T, R> implements Function<T, R> {
      */
     @NotNull
     protected Map<T, Supplier<R>> buildCache() {
-        return new ConcurrentHashMap<>();
+        return new VolatileNullSafeMap<>(new ConcurrentHashMap<>());
     }
 
     public MemoizedFunction(@NotNull Function<T, R> original) {

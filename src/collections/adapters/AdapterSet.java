@@ -12,21 +12,15 @@ import java.util.stream.Stream;
 public class AdapterSet<A, B> extends AbstractSet<B> {
     @NotNull
     private final Set<A> base;
-    private final Set<B> additional;
     @NotNull
     private final Function<A, B> aToB;
     @NotNull
     private final Function<B, A> bToA;
 
-    public AdapterSet(@NotNull Set<A> base, @NotNull Function<A, B> aToB, @NotNull Function<B, A> bToA, Set<B> additional) {
+    public AdapterSet(@NotNull Set<A> base, @NotNull Function<A, B> aToB, @NotNull Function<B, A> bToA) {
         this.base = Objects.requireNonNull(base);
-        this.additional = additional;
         this.aToB = Objects.requireNonNull(aToB);
         this.bToA = Objects.requireNonNull(bToA);
-    }
-
-    public AdapterSet(@NotNull Set<A> base, @NotNull Function<A, B> aToB, @NotNull Function<B, A> bToA) {
-        this(base, aToB, bToA, null);
     }
 
     @Override
@@ -36,11 +30,7 @@ public class AdapterSet<A, B> extends AbstractSet<B> {
 
     @Override
     public int size() {
-        if (additional == null) {
-            return base.size();
-        } else {
-            return base.size() + additional.size();
-        }
+        return base.size();
     }
 
     @Override
@@ -53,26 +43,16 @@ public class AdapterSet<A, B> extends AbstractSet<B> {
         }
         final var a = bToA.apply(b);
 
-        return base.contains(a) || (additional != null && additional.contains(a));
+        return base.contains(a);
     }
 
     @Override
     public Stream<B> stream() {
-        final var baseStream = base.stream().map(aToB);
-        if (additional == null) {
-            return baseStream;
-        } else {
-            return Stream.concat(baseStream, additional.stream());
-        }
+        return base.stream().map(aToB);
     }
 
     @Override
     public Stream<B> parallelStream() {
-        final var baseStream = base.parallelStream().map(aToB);
-        if (additional == null) {
-            return baseStream;
-        } else {
-            return Stream.concat(baseStream, additional.parallelStream());
-        }
+        return base.parallelStream().map(aToB);
     }
 }

@@ -1,12 +1,16 @@
 package collections.reference;
 
 import collections.adapters.AdapterSet;
+import collections.adapters.ExtensionSet;
 import collections.persistent.PersistentSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 abstract class ReferenceMap<K, V> extends AbstractMap<K, V> {
     private final Map<Reference<? extends K>, V> data;
@@ -38,16 +42,20 @@ abstract class ReferenceMap<K, V> extends AbstractMap<K, V> {
     @Override
     public Set<Entry<K, V>> entrySet() {
         prune();
-        final Set<Map.Entry<K, V>> additionalSet = containsNullKey
-                ? PersistentSet.of(new SimpleImmutableEntry<>(null, nullKeyValue)) :
-                null;
 
-        return new AdapterSet<>(
+        final Set<Entry<K, V>> adaptedSet = new AdapterSet<>(
                 data.entrySet(),
                 a -> new SimpleImmutableEntry<>(a.getKey().get(), a.getValue()),
-                b -> Map.entry(buildKey(b.getKey()), b.getValue()),
-                additionalSet
-        );
+                b -> Map.entry(buildKey(b.getKey()), b.getValue()));
+
+        if (containsNullKey) {
+            return new ExtensionSet<>(
+                    adaptedSet,
+                    PersistentSet.of(
+                            new SimpleImmutableEntry<>(null, nullKeyValue)));
+        } else {
+            return adaptedSet;
+        }
     }
 
     @Override

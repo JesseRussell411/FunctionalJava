@@ -1,5 +1,6 @@
 package memoization.impure;
 
+import collections.decorators.VolatileNullSafeMap;
 import collections.records.ListRecord;
 import org.jetbrains.annotations.NotNull;
 import reference.VolatileUntilSet;
@@ -21,7 +22,7 @@ public class MemoizedRoutine<T, R> implements BiFunction<T, ListRecord<?>, R> {
 
     @NotNull
     protected Map<Context<T>, VolatileUntilSet<Supplier<R>>> buildCache() {
-        return new ConcurrentHashMap<>();
+        return new VolatileNullSafeMap<>(new ConcurrentHashMap<>());
     }
 
     public MemoizedRoutine(@NotNull Function<T, R> subRoutine) {

@@ -505,6 +505,9 @@ public class Scratch {
                 }).then((n) -> {
                     System.out.println("The factorial of " + n + " is " + memoFibFact(n, n).fact);
                     return n;
+                }).onError(e -> {
+                    System.err.println(e);
+                    return e;
                 });
 
                 deferred.promise().then(n -> {
@@ -526,6 +529,7 @@ public class Scratch {
                     return reason;
                 });
 
+                System.out.println("\n\n");
                 System.out.print("Enter Number: ");
                 deferred.settle().resolve(input.nextInt());
             }
