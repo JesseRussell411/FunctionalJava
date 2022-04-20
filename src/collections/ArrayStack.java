@@ -1,11 +1,13 @@
 package collections;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.EmptyStackException;
 
 public class ArrayStack<T> {
-    private ArrayList<T> data;
-    int headIndex = -1;
+    @NotNull
+    private final ArrayList<T> data;
 
     public ArrayStack() {
         data = new ArrayList<>();
@@ -16,34 +18,41 @@ public class ArrayStack<T> {
     }
 
     public void push(T item) {
-        if (data.size() > size()) {
-            data.set(++headIndex, item);
-        } else {
-            data.add(item);
-            headIndex++;
-        }
+        data.add(item);
     }
 
-    public T peek() {
-        if (headIndex == -1) throw new EmptyStackException();
-        return data.get(headIndex);
+    public T peek(int depth) {
+        if (data.isEmpty()) throw new EmptyStackException();
+        return data.get(data.size() - depth - 1);
+    }
+
+    public T peek(){
+        return peek(0);
     }
 
     public T pop() {
-        if (headIndex == -1) throw new EmptyStackException();
-        return data.get(headIndex--);
+        if (data.isEmpty()) throw new EmptyStackException();
+        return data.remove(data.size() - 1);
+
     }
 
     public void clear() {
-        headIndex = -1;
         data.clear();
     }
 
     public int size() {
-        return headIndex + 1;
+        return data.size();
     }
 
     public boolean isEmpty() {
-        return headIndex == -1;
+        return data.isEmpty();
+    }
+
+    public void trimToSize() {
+        data.trimToSize();
+    }
+
+    public void ensureCapacity(int minCapacity) {
+        data.ensureCapacity(minCapacity);
     }
 }
