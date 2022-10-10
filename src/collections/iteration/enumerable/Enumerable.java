@@ -5,6 +5,10 @@ import collections.iteration.enumerator.Enumerator;
 
 import java.util.Iterator;
 
+/**
+ * More like C#'s IEnumerator interface which can be easier to write than Iterator.
+ * @param <T>
+ */
 public interface Enumerable<T> extends Iterable<T> {
     Enumerator<T> enumerator();
 
