@@ -13,7 +13,7 @@ import collections.iteration.enumerator.IndexedBiDirectionalEnumerator;
 import collections.records.ListRecord;
 import memoization.pure.lazy.SoftLazy;
 import org.jetbrains.annotations.NotNull;
-import utils.ArrayUtils;
+import collections.ArrayUtils;
 
 import java.util.*;
 import java.util.function.Supplier;

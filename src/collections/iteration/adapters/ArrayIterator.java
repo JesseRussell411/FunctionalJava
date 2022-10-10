@@ -1,6 +1,6 @@
 package collections.iteration.adapters;
 
-import utils.ArrayUtils;
+import collections.ArrayUtils;
 
 import java.util.ListIterator;
 import java.util.NoSuchElementException;

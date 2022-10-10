@@ -11,7 +11,8 @@ import java.util.function.Supplier;
 
 /**
  * Memoization decorator for {@link Function}. It is assumed that the original function is pure,
- * ie: no side effects and no mutable dependencies, and the result is determined only by the input parameter: t.
+ * ie: no side effects and no mutable dependencies. The result is the only effect and is determined
+ * only by the input parameter: t.
  *
  * @param <T> Input type.
  * @param <R> Return type.

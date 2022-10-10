@@ -5,6 +5,10 @@ import reference.VolatileUntilSet;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+/**
+ * A memoized {@link Supplier}. Possibly useful for lazy execution, hence the name.
+ * @param <T>
+ */
 public class Lazy<T> implements Supplier<T> {
     private Supplier<T> original;
     private final VolatileUntilSet<Supplier<T>> cache = new VolatileUntilSet<>();

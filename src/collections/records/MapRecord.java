@@ -14,6 +14,11 @@ import java.util.stream.Stream;
 
 // TODO add no-caching flag
 
+/**
+ * Immutable map data structure that assumes its contents are also immutable.
+ * This assumption allows it to cache operations like toString or equality checking.
+ * @param <T>
+ */
 public class MapRecord<K, V> implements Iterable<Map.Entry<K, V>>, Serializable {
     private final PersistentMap<K, V> map;
     private final Map<MapRecord<?, ?>, Boolean> equalityCache = new WeakIdentityConcurrentHashMap<>();

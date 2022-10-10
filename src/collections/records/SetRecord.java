@@ -14,6 +14,11 @@ import java.util.stream.Stream;
 
 // TODO add no-caching flag
 
+/**
+ * Immutable set data structure that assumes its contents are also immutable.
+ * This assumption allows it to cache operations like toString or equality checking.
+ * @param <T>
+ */
 public class SetRecord<T> implements Iterable<T>, Serializable {
     private final PersistentSet<T> set;
     private final Map<SetRecord<?>, Boolean> equalityCache = new WeakIdentityConcurrentHashMap<>();

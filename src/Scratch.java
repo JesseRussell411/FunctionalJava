@@ -44,7 +44,7 @@ class MemoizedBiFunction<T, U, R> implements BiFunction<T, U, R> {
 }
 
 /**
- * int wrapper that returns a (B)ad (H)ash
+ * int wrapper that returns a (B)ad (H)ash for testing hashmaps
  */
 class Intbh {
     public final int value;

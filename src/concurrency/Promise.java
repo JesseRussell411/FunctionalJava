@@ -62,7 +62,7 @@ public class Promise<T> {
         });
     }
 
-    public static <T> Promise<T> consolidate(Promise<Promise<T>> chain) {
+    public static <T> Promise<T> flatten(Promise<Promise<T>> chain) {
         if (chain == null) return null;
         final var next = new Promise<T>();
 
@@ -355,7 +355,7 @@ public class Promise<T> {
     }
 
     public <R> Promise<R> asyncThen(Function<T, Promise<R>> ifResolved, Function<Throwable, Promise<R>> ifRejected, Function<CancellationReason, Promise<R>> ifCanceled) {
-        return Promise.consolidate(then(ifResolved, ifRejected, ifCanceled));
+        return Promise.flatten(then(ifResolved, ifRejected, ifCanceled));
     }
 
     public <R> Promise<R> then(Function<T, R> ifResolved, Function<Throwable, R> ifRejected, Function<CancellationReason, R> ifCanceled) {

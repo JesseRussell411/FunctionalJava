@@ -13,6 +13,11 @@ import java.util.stream.Stream;
 
 // TODO add no-caching flag
 
+/**
+ * Immutable list data structure that assumes its contents are also immutable.
+ * This assumption allows it to cache operations like toString or equality checking.
+ * @param <T>
+ */
 public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
     private final Map<ListRecord<?>, Boolean> equalityCache = new WeakIdentityConcurrentHashMap<>();
     private final PersistentList<T> list;

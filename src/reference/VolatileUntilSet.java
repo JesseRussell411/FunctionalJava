@@ -4,6 +4,13 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 // not sure if this is actually better than just a volatile field, but it is a nice proof-of-concept.
+
+/**
+ * A type of reference that starts unset and can only be set once.
+ * The value of this reference is stored in a volatile field until it is set, at which point the value is stored in a
+ * non-volatile field.
+ * @param <T>
+ */
 public class VolatileUntilSet<T> implements Supplier<T> {
     private volatile T current;
     private T cacheable;
