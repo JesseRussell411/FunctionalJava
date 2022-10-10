@@ -5,7 +5,8 @@ import java.util.EmptyStackException;
 
 /**
  * Last in first out data structure based on the {@link ArrayList} class.
- * <strong>Note that, just like {@link ArrayList}, this implementation is not synchronized.</strong>
+ * <strong>Note that, just like {@link ArrayList}, this implementation is not synchronized (not thread-safe).</strong>
+ *
  * @param <T>
  */
 public class ArrayStack<T> extends ArrayList<T> implements Cloneable {
@@ -18,8 +19,8 @@ public class ArrayStack<T> extends ArrayList<T> implements Cloneable {
     }
 
     /**
-     * @return The item at the depth from the top of the stack without removing the item.
      * @param depth How far into the stack to retrieve the item. 0 would return the top item for example.
+     * @return The item at the depth from the top of the stack without removing the item.
      */
     public T peek(int depth) {
         if (isEmpty()) throw new EmptyStackException();
@@ -35,6 +36,7 @@ public class ArrayStack<T> extends ArrayList<T> implements Cloneable {
 
     /**
      * Removes the item at the top of the stack.
+     *
      * @return The item that was removed.
      */
     public T pop() {
@@ -45,6 +47,7 @@ public class ArrayStack<T> extends ArrayList<T> implements Cloneable {
     /**
      * Pushes the item onto the stack.
      * Identical to add.
+     *
      * @param item The item to push onto the stack.
      */
     public void push(T item) {
