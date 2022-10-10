@@ -1,4 +1,4 @@
-package collections.adapters;
+package collections.decorators;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -8,12 +8,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public class ExtensionSet<T> extends AbstractSet<T> {
+public class AppendedSet<T> extends AbstractSet<T> {
     @NotNull
     private final Set<T> base;
-    private final Set<T> extension;
+    private final T extension;
 
-    public ExtensionSet(@NotNull Set<T> base, Set<T> extension) {
+    public AppendedSet(@NotNull Set<T> base, T extension) {
         this.base = Objects.requireNonNull(base);
         this.extension = extension;
     }
@@ -25,32 +25,31 @@ public class ExtensionSet<T> extends AbstractSet<T> {
 
     @Override
     public int size() {
-        if (extension == null) {
+        if (base.contains(extension)) {
             return base.size();
         } else {
-            return base.size() + extension.size();
+            return base.size() + 1;
         }
     }
 
     @Override
-    public boolean contains(Object obj) {
-        T t;
-        try {
-            t = (T) obj;
-        } catch (ClassCastException cce) {
-            return false;
-        }
+    public boolean isEmpty() {
+        // this set cannot be empty because it will always contain at least the additional value;
+        return false;
+    }
 
-        return base.contains(t) || (extension != null && extension.contains(t));
+    @Override
+    public boolean contains(Object obj) {
+        if (Objects.equals(obj, extension)) {
+            return true;
+        } else {
+            return base.contains(obj);
+        }
     }
 
     public Stream<T> stream(boolean parallel) {
         final var baseStream = parallel ? base.parallelStream() : base.stream();
-        if (extension == null) {
-            return baseStream;
-        } else {
-            return Stream.concat(baseStream, parallel ? extension.parallelStream() : extension.stream());
-        }
+        return Stream.concat(baseStream, Stream.of(extension));
     }
 
     @Override

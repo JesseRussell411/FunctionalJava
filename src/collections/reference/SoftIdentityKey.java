@@ -20,7 +20,7 @@ class SoftIdentityKey<T> extends SoftReference<T> {
     public SoftIdentityKey(T key) {
         super(key);
         tHolder = key;
-        hashCode = Objects.hashCode(key);
+        hashCode = System.identityHashCode(key);
     }
 
     @Override

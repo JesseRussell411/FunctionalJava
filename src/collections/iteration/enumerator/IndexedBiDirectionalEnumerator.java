@@ -1,4 +1,7 @@
 package collections.iteration.enumerator;
 
-public interface IndexedBiDirectionalEnumerator<T> extends BiDirectionalEnumerator<T>, IndexedEnumerator<T> {
+import collections.iteration.enumerator.BiDirectionalEnumerator;
+import collections.iteration.enumerator.IndexedEnumerator;
+
+public interface IndexedBiDirectionalEnumerator<T> extends IndexedEnumerator<T>, BiDirectionalEnumerator<T> {
 }

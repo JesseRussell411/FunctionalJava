@@ -93,11 +93,11 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
         }
     }
 
-    public PersistentTreeSet<T> withMany(Iterator<T> valueIterator) {
+    public PersistentTreeSet<T> withMany(Iterator<T> values) {
         var result = new PersistentTreeSet<T>();
 
-        while (valueIterator.hasNext()) {
-            result = result.with(valueIterator.next());
+        while (values.hasNext()) {
+            result = result.with(values.next());
         }
 
         return result;
@@ -120,7 +120,7 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
         // TODO add abort on duplicate instance
         final var size = new Pointer<>(size());
         return Assertions.assert_CorrectSize(
-                with(root, value, size).wrap(size.current));
+                new PersistentTreeSet<>(with(root, value, size), size.current));
     }
 
     private static <T extends Comparable<T>> Node<T> with(Node<T> n, T value, Pointer<Integer> size) {
@@ -349,10 +349,6 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
             balanceFactor = (byte) (depthOf(right) - depthOf(left));
         }
 
-        PersistentTreeSet<T> wrap(int size) {
-            return new PersistentTreeSet<>(this, size);
-        }
-
         Node<T> balanced() {
             return PersistentTreeSet.balanced(this);
         }
@@ -364,8 +360,8 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
         return enumerator(false);
     }
 
-    public BiDirectionalEnumerator<T> enumerator(boolean startAtEnd) {
-        return new SelfEnumerator<>(root, startAtEnd);
+    public BiDirectionalEnumerator<T> enumerator(boolean reversed) {
+        return new SelfEnumerator<>(root, reversed);
     }
 
     public Iterator<T> reversedIterator() {
@@ -389,8 +385,14 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
         return StreamSupport.stream(spliterator(), parallel);
     }
 
+    @Override
     public Stream<T> stream() {
         return stream(false);
+    }
+
+    @Override
+    public Stream<T> parallelStream() {
+        return stream(true);
     }
 
     private static class NodeEnumerator<T extends Comparable<T>> implements BiDirectionalEnumerator<Node<T>> {

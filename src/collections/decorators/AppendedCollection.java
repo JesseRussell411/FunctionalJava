@@ -5,35 +5,37 @@ import org.jetbrains.annotations.NotNull;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.stream.Stream;
 
-public class ExtensionCollection<T> extends AbstractCollection<T> {
+public class AppendedCollection<T> extends AbstractCollection<T> {
     @NotNull
     private final Collection<T> base;
-    private final Collection<T> extension;
+    private final T addition;
 
-    public ExtensionCollection(@NotNull Collection<T> base, Collection<T> extension) {
+    public AppendedCollection(@NotNull Collection<T> base, T addition) {
         this.base = base;
-        this.extension = extension;
+        this.addition = addition;
     }
 
     @Override
     public int size() {
-        if (extension == null) {
-            return base.size();
-        } else {
-            return base.size() + extension.size();
-        }
+        return base.size() + 1;
     }
 
     @Override
     public boolean isEmpty() {
-        return size() == 0;
+        // will never be empty because it contains at least the addition.
+        return false;
     }
 
     @Override
     public boolean contains(Object o) {
-        return base.contains(o) || (extension != null && extension.contains(o));
+        if (Objects.equals(addition, o)) {
+            return true;
+        } else {
+            return base.contains(o);
+        }
     }
 
     @NotNull
@@ -44,11 +46,7 @@ public class ExtensionCollection<T> extends AbstractCollection<T> {
 
     public Stream<T> stream(boolean parallel) {
         final var baseStream = parallel ? base.parallelStream() : base.stream();
-        if (extension == null) {
-            return baseStream;
-        } else {
-            return Stream.concat(baseStream, parallel ? base.parallelStream() : base.stream());
-        }
+        return Stream.concat(baseStream, Stream.of(addition));
     }
 
     @Override

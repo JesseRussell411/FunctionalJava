@@ -1,4 +1,3 @@
-import collections.ArrayStack;
 import collections.adapters.ArrayAsList;
 import collections.persistent.PersistentList;
 import collections.persistent.PersistentMap;
@@ -288,19 +287,19 @@ public class Scratch {
 
         print(l);
 
-        l = l.withInsertion(1, List.of("apple1", "apple2", "apple3", "apple4"));
-        l = l.withInsertion(l.size(), List.of("this goes at the end", "this is the end"));
-        l = l.withInsertion(0, List.of("this goes at the start"));
+        l = l.insert(1, List.of("apple1", "apple2", "apple3", "apple4"));
+        l = l.insert(l.size(), List.of("this goes at the end", "this is the end"));
+        l = l.insert(0, List.of("this goes at the start"));
         print(l);
 
-        l = l.withInsertion(0, Stream.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9).map(String::valueOf));
+        l = l.insert(0, Stream.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9).map(String::valueOf));
         print(l, "");
-        l = l.withReplacement(1, Stream.of("a", "b", "c"));
+        l = l.replace(1, Stream.of("a", "b", "c"));
         print(l, "");
-        l = l.withReplacement(0, Stream.of(">")).withReplacement(l.size() - 1, Stream.of("<"));
+        l = l.replace(0, Stream.of(">")).replace(l.size() - 1, Stream.of("<"));
         print(l, "");
-        print(l.withSwap(0, "[").withSwap(l.size() - 1, "]"), "");
-        print(l.withAddition(0, "{").withAddition(l.size() + 1, "}"), "");
+        print(l.swap(0, "[").swap(l.size() - 1, "]"), "");
+        print(l.insertSingle(0, "{").insertSingle(l.size() + 1, "}"), "");
         print(originalL);
         print(l);
         print(l.without(3));
@@ -349,7 +348,7 @@ public class Scratch {
         System.out.println("insertion into list (out of place):" + (stop - start));
 
         start = System.currentTimeMillis();
-        final var withAddition = randIntPList1_000_000.withAddition(i, -2);
+        final var withAddition = randIntPList1_000_000.insertSingle(i, -2);
         stop = System.currentTimeMillis();
         System.out.println("insertion into plist:" + (stop - start));
 
@@ -411,6 +410,7 @@ public class Scratch {
         stop = System.currentTimeMillis();
         print("repeating 429_496_729 times took:" + (stop - start) + "ms");
         print("size after repeating: " + repeatedALot.size());
+        new PersistentList<Integer>().put(3).push(5).pop().pull();
 
         final var bigStructure = PersistentSet.of(
                         new PersistentMap<String, String>()
@@ -530,47 +530,48 @@ public class Scratch {
         System.out.println(whm.size());
 
 
-        try (final var input = new Scanner(System.in)) {
-            while (true) {
-                final var deferred = Promise.<Integer>deferred();
 
-                deferred.promise().then(n -> {
-                    System.out.println("You entered " + n);
-                    return n;
-                }).then((n) -> {
-                    System.out.println("The fibonacci number at " + n + " is " + memoFibFact(n, n).fib);
-                    return n;
-                }).then((n) -> {
-                    System.out.println("The factorial of " + n + " is " + memoFibFact(n, n).fact);
-                    return n;
-                }).onError(e -> {
-                    System.err.println(e);
-                    return e;
-                });
-
-                deferred.promise().then(n -> {
-                    System.out.println("Again, the number you entered is " + n);
-                    System.out.println("Now I'll throw an error with the code " + n);
-                    throw new RuntimeException(String.valueOf(n));
-                }).onError(error -> {
-                    System.out.println("Caught the error " + error.getMessage());
-                    return error.getMessage();
-                }).then(message -> {
-                    System.out.println("Again, that error's message was " + message);
-                    System.out.println("Now, I'll NOT throw an error.");
-                    return message;
-                }).onError(e -> {
-                    System.out.println("This text won't print");
-                    return e;
-                }).onCancel(reason -> {
-                    System.out.println("The error handling code was canceled because " + reason.getMessage());
-                    return reason;
-                });
-
-                System.out.println("\n\n");
-                System.out.print("Enter Number: ");
-                deferred.settle().resolve(input.nextInt());
-            }
-        }
+//        try (final var input = new Scanner(System.in)) {
+//            while (true) {
+//                final var deferred = Promise.<Integer>deferred();
+//
+//                deferred.promise().then(n -> {
+//                    System.out.println("You entered " + n);
+//                    return n;
+//                }).then((n) -> {
+//                    System.out.println("The fibonacci number at " + n + " is " + memoFibFact(n, n).fib);
+//                    return n;
+//                }).then((n) -> {
+//                    System.out.println("The factorial of " + n + " is " + memoFibFact(n, n).fact);
+//                    return n;
+//                }).onError(e -> {
+//                    System.err.println(e);
+//                    return e;
+//                });
+//
+//                deferred.promise().then(n -> {
+//                    System.out.println("Again, the number you entered is " + n);
+//                    System.out.println("Now I'll throw an error with the code " + n);
+//                    throw new RuntimeException(String.valueOf(n));
+//                }).onError(error -> {
+//                    System.out.println("Caught the error " + error.getMessage());
+//                    return error.getMessage();
+//                }).then(message -> {
+//                    System.out.println("Again, that error's message was " + message);
+//                    System.out.println("Now, I'll NOT throw an error.");
+//                    return message;
+//                }).onError(e -> {
+//                    System.out.println("This text won't print");
+//                    return e;
+//                }).onCancel(reason -> {
+//                    System.out.println("The error handling code was canceled because " + reason.getMessage());
+//                    return reason;
+//                });
+//
+//                System.out.println("\n\n");
+//                System.out.print("Enter Number: ");
+//                deferred.settle().resolve(input.nextInt());
+//            }
+//        }
     }
 }

@@ -12,6 +12,10 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+/**
+ * Immutable set that allows copy with modification.
+ * @param <T>
+ */
 public class PersistentSet<T> extends AbstractSet<T> implements Enumerable<T>, java.io.Serializable {
     @NotNull
     private final PersistentTreeSet<Group<T>> entries;
@@ -189,7 +193,6 @@ public class PersistentSet<T> extends AbstractSet<T> implements Enumerable<T>, j
         public Group(int key, PersistentList<T> values) {
             this.key = key;
             this.values = values;
-            assert this.values != null;
         }
 
         Group<T> with(T value) {

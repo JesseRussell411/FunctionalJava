@@ -11,7 +11,7 @@ class WeakIdentityKey<T> extends WeakReference<T> {
     public WeakIdentityKey(T key, ReferenceQueue<T> queue) {
         super(key, queue);
         tHolder = null;
-        hashCode = Objects.hashCode(key);
+        hashCode = System.identityHashCode(key);
     }
 
     /**

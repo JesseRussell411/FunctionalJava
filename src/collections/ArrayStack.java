@@ -26,14 +26,13 @@ public class ArrayStack<T> {
         return data.get(data.size() - depth - 1);
     }
 
-    public T peek(){
+    public T peek() {
         return peek(0);
     }
 
     public T pop() {
         if (data.isEmpty()) throw new EmptyStackException();
         return data.remove(data.size() - 1);
-
     }
 
     public void clear() {

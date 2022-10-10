@@ -20,6 +20,14 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+// Honestly not the best implementation of a persistent list, but very flexible and my first try.
+
+/**
+ * Immutable list that supports efficient copying with modification.
+ * Basic operations have logarithmic complexity in time and space.
+ *
+ * @param <T>
+ */
 public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirectionalEnumerable<T>, java.io.Serializable {
     @NotNull
     private static final Object[] EMPTY_ARRAY = new Object[0];
@@ -127,35 +135,31 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         return new ListRecord<>(this);
     }
 
-    private final Supplier<String> asString = new SoftLazy<>(() -> {
-        final var builder = new StringBuilder();
-        for (final var item : this) builder.append(item);
-        return builder.toString();
-    });
-
+    /**
+     * Creates a string containing the string representations of each item in the list concatenated together with no deliminators.
+     *
+     * @return The created string.
+     */
     public String asString() {
-        return asString.get();
+        return asString("");
     }
 
-    @Override
-    public int indexOf(Object o) {
-        int index = 0;
-        for (final var item : this) {
-            if (Objects.equals(o, item)) return index;
-            index++;
-        }
-        return -1;
-    }
+    /**
+     * Creates a string containing the string representations of each item in the list separated by the deliminator.
+     *
+     * @return The created string.
+     */
+    public String asString(String deliminator) {
+        final var builder = new StringBuilder();
 
-    @Override
-    public int lastIndexOf(Object o) {
-        int index = 0;
-        int lastIndex = -1;
-        for (final var item : this) {
-            if (Objects.equals(o, item)) lastIndex = index;
-            index++;
+        final var enu = this.enumerator();
+        if (enu.moveNext()) builder.append(enu.current());
+
+        while (enu.moveNext()) {
+            builder.append(deliminator);
+            builder.append(enu.current());
         }
-        return lastIndex;
+        return builder.toString();
     }
 
     @Override
@@ -175,23 +179,53 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
 
     // =================== list operations, single item =======================
     // extract
+
+    /**
+     * Gets the item at the index.
+     *
+     * @param index The index of the item to get.
+     * @return The item at the index.
+     */
     public T get(int index) {
         return (T) get(index, root);
     }
 
     // replace
-    public PersistentList<T> withSwap(int index, T item) {
+
+    /**
+     * Replaces the item at the index with the given item.
+     *
+     * @param index The index of the item to replace.
+     * @param item  The new item with which to replace the old one.
+     * @return A new list with the item replaced.
+     */
+    public PersistentList<T> swap(int index, T item) {
         ArrayUtils.requireIndexInBounds(index, size());
         return new PersistentList<>(set(index, item, root));
     }
 
     // insert
-    public PersistentList<T> withAddition(int index, T item) {
+
+    /**
+     * Inserts the item at the index.
+     *
+     * @param index Where to insert the item.
+     * @param item  the item to insert.
+     * @return A new list with the item inserted.
+     */
+    public PersistentList<T> insertSingle(int index, T item) {
         ArrayUtils.requireIndexInBounds(index, size() + 1);
         return new PersistentList<>(add(index, item, root));
     }
 
     // remove
+
+    /**
+     * Removes the item at the index from the list.
+     *
+     * @param index The index of the item to remove.
+     * @return A new list without the item at the index.
+     */
     public PersistentList<T> without(int index) {
         ArrayUtils.requireIndexInBounds(index, size());
         return new PersistentList<>(remove(index, index + 1, root));
@@ -199,113 +233,247 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
 
     // ================= list operations, multi item ==========================
     //extract
+
+    /**
+     * Gets a range of items from the list.
+     *
+     * @param start  The index of the first item to get.
+     * @param length How many items to get.
+     * @return A new list containing the range of items.
+     */
     public PersistentList<T> get(int start, int length) {
         ArrayUtils.requireRangeInBounds(start, length, size());
         return new PersistentList<>(get(start, start + length, root));
     }
 
     // replace
-    public PersistentList<T> withReplacement(int index, Stream<T> itemStream) {
-        return withReplacement(index, itemStream.iterator());
+
+    /**
+     * Replaces a range of items in the list with the given collection of items.
+     *
+     * @param index The index of the first item to replace.
+     * @param items The items with which to replace.
+     * @return A new list with the replaced items.
+     */
+    public PersistentList<T> replace(int index, Stream<T> items) {
+        return replace(index, items.iterator());
     }
 
-    public PersistentList<T> withReplacement(int index, Iterable<T> items) {
-        return withReplacement(index, items.iterator());
+    /**
+     * Replaces a range of items in the list with the given collection of items.
+     *
+     * @param index The index of the first item to replace.
+     * @param items The items with which to replace.
+     * @return A new list with the replaced items.
+     */
+    public PersistentList<T> replace(int index, Iterable<T> items) {
+        return replace(index, items.iterator());
     }
 
-    public PersistentList<T> withReplacement(int index, Collection<T> items) {
+    /**
+     * Replaces a range of items in the list with the given collection of items.
+     *
+     * @param index The index of the first item to replace.
+     * @param items The items with which to replace.
+     * @return A new list with the replaced items.
+     */
+    public PersistentList<T> replace(int index, Collection<T> items) {
         ArrayUtils.requireIndexInBounds(index, size());
         if (items.size() == 0) return this;
-        return withReplacement(index, items.iterator());
+        return replace(index, items.iterator());
     }
 
-    public PersistentList<T> withReplacement(int index, T[] items) {
+    /**
+     * Replaces a range of items in the list with the given collection of items.
+     *
+     * @param index The index of the first item to replace.
+     * @param items The items with which to replace.
+     * @return A new list with the replaced items.
+     */
+    public PersistentList<T> replace(int index, T[] items) {
         ArrayUtils.requireIndexInBounds(index, size());
         if (items.length == 0) return this;
-        return withReplacement(index, new ArrayIterator<>(items));
+        return replace(index, new ArrayIterator<>(items));
     }
 
-    public PersistentList<T> withReplacement(int index, Iterator<T> itemIterator) {
+    /**
+     * Replaces a range of items in the list with the given collection of items.
+     *
+     * @param index The index of the first item to replace.
+     * @param items The items with which to replace.
+     * @return A new list with the replaced items.
+     */
+    public PersistentList<T> replace(int index, Iterator<T> items) {
         ArrayUtils.requireIndexInBounds(index, size());
-        return new PersistentList<>(withReplacement(index, itemIterator, root));
+        return new PersistentList<>(replace(index, items, root));
     }
 
     // insert
-    public PersistentList<T> withInsertion(int index, Stream<T> itemStream) {
-        return withInsertion(index, itemStream.iterator());
+
+    /**
+     * Inserts a collection of items into the list.
+     *
+     * @param index Where to insert the items.
+     * @param items The items to insert.
+     * @return A new list with the inserted items.
+     */
+    public PersistentList<T> insert(int index, Stream<T> items) {
+        return insert(index, items.iterator());
     }
 
-    public PersistentList<T> withInsertion(int index, Iterable<T> items) {
-        return withInsertion(index, items.iterator());
+    /**
+     * Inserts a collection of items into the list.
+     *
+     * @param index Where to insert the items.
+     * @param items The items to insert.
+     * @return A new list with the inserted items.
+     */
+    public PersistentList<T> insert(int index, Iterable<T> items) {
+        return insert(index, items.iterator());
     }
 
-    public PersistentList<T> withInsertion(int index, Iterator<T> itemIterator) {
+    /**
+     * Inserts a collection of items into the list.
+     *
+     * @param index Where to insert the items.
+     * @param items The items to insert.
+     * @return A new list with the inserted items.
+     */
+    public PersistentList<T> insert(int index, Iterator<T> items) {
         ArrayUtils.requireIndexInBounds(index, size() + 1);
-        return new PersistentList<>(withInsertion(index, itemIterator, root));
+        return new PersistentList<>(insert(index, items, root));
     }
 
-    public PersistentList<T> withInsertion(int index, Collection<T> items) {
+    /**
+     * Inserts a collection of items into the list.
+     *
+     * @param index Where to insert the items.
+     * @param items The items to insert.
+     * @return A new list with the inserted items.
+     */
+    public PersistentList<T> insert(int index, Collection<T> items) {
         ArrayUtils.requireIndexInBounds(index, size() + 1);
         if (items.size() == 0) return this;
-        return withInsertion(index, items.iterator());
+        return insert(index, items.iterator());
     }
 
-    public PersistentList<T> withInsertion(int index, T[] items) {
+    /**
+     * Inserts a collection of items into the list.
+     *
+     * @param index Where to insert the items.
+     * @param items The items to insert.
+     * @return A new list with the inserted items.
+     */
+    public PersistentList<T> insert(int index, T[] items) {
         ArrayUtils.requireIndexInBounds(index, size() + 1);
         if (items.length == 0) return this;
-        return withInsertion(index, new ArrayIterator<>(items));
+        return insert(index, new ArrayIterator<>(items));
     }
 
-    public PersistentList<T> withInsertion(int index, PersistentList<T> items) {
+    /**
+     * Inserts a collection of items into the list.
+     *
+     * @param index Where to insert the items.
+     * @param items The items to insert.
+     * @return A new list with the inserted items.
+     */
+    public PersistentList<T> insert(int index, PersistentList<T> items) {
         ArrayUtils.requireIndexInBounds(index, size() + 1);
         if (items.size() == 0) return this;
-        return new PersistentList<>(withInsertion(index, items.root, root));
+        return new PersistentList<>(insert(index, items.root, root));
     }
 
     // remove
+
+    /**
+     * Removes a range of items from the list.
+     *
+     * @param start  The index of the first item to remove.
+     * @param length How many items to remove in sequence.
+     * @return A new list with the range removed.
+     */
     public PersistentList<T> without(int start, int length) {
         ArrayUtils.requireRangeInBounds(start, length, size());
         return new PersistentList<>(remove(start, start + length, root));
     }
 
     // ======================== misc list operations, single and multi item =================================
+
+    /**
+     * Sorts the list in ascending order based on the comparator given.
+     *
+     * @param comparator How to sort the list.
+     * @return A new list that has been sorted.
+     */
     public PersistentList<T> sorted(Comparator<T> comparator) {
         return new PersistentList<>(stream().sorted(comparator));
     }
 
+    /**
+     * @return The first item in the list.
+     */
     public T head() {
         if (size() == 0) return null;
         return get(0);
     }
 
+    /**
+     * @return The last item in the list.
+     */
     public T tail() {
         if (size() == 0) return null;
         return get(size() - 1);
     }
 
-    public PersistentList<T> head(int length) {
-        return get(0, Math.min(size(), length));
+    /**
+     * @return The first n items in the list.
+     */
+    public PersistentList<T> head(int n) {
+        return get(0, Math.min(size(), n));
     }
 
-    public PersistentList<T> tail(int length) {
-        final var trimmedLength = Math.min(size(), length);
+    /**
+     * @return The last n items in the list.
+     */
+    public PersistentList<T> tail(int n) {
+        final var trimmedLength = Math.min(size(), n);
         return get(size() - trimmedLength, trimmedLength);
     }
 
-    public PersistentList<T> withPut(T item) {
-        return withAddition(size(), item);
+    /**
+     * Put item onto end of list.
+     *
+     * @return A new list with the item added onto the end.
+     */
+    public PersistentList<T> put(T item) {
+        return insertSingle(size(), item);
     }
 
-    public PersistentList<T> withoutPopped() {
+    /**
+     * Removes the last item.
+     *
+     * @return A new list without the last item.
+     */
+    public PersistentList<T> pop() {
         if (size() == 0) return new PersistentList<>();
         return without(size() - 1);
     }
 
-    public PersistentList<T> withPushed(T item) {
-        return withAddition(0, item);
+    /**
+     * Push item onto start of list.
+     *
+     * @return A new list with the item added as the first item.
+     */
+    public PersistentList<T> push(T item) {
+        return insertSingle(0, item);
     }
 
-    public PersistentList<T> withoutPulled() {
+    /**
+     * Removes the first item.
+     *
+     * @return A new list without the first item.
+     */
+    public PersistentList<T> pull() {
         if (size() == 0) return new PersistentList<>();
         return without(0);
     }
@@ -341,10 +509,14 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A copy of the list with the first occurrence of a matching item (as determined by Object.equals()) replaced with the item given or the item appended to the end if it did not occur.
      */
     public PersistentList<T> with(T item) {
-        if (item == null && contains(null)) return this;
+        if (item == null) {
+            if (contains(null)) return this;
+            else return this.put(null);
+        }
+
         final var replacementAttempt = replaceFirstOccurrence(root, item);
         if (replacementAttempt != null) return new PersistentList<>(replacementAttempt);
-        return withPut(item);
+        return put(item);
     }
 
     private final Supplier<PersistentList<T>> lazyReversed = new SoftLazy<>(() -> new PersistentList<>(reversedIterator()));
@@ -354,7 +526,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
     }
 
     public PersistentList<T> concat(PersistentList<T> other) {
-        return this.withInsertion(size(), other);
+        return this.insert(size(), other);
     }
 
     public PersistentList<T> repeated(int times) {
@@ -438,18 +610,18 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         } else throw new IllegalStateException();
     }
 
-    private static Node withReplacement(int index, Iterator<?> itemIterator, Node root) {
+    private static Node replace(int index, Iterator<?> itemIterator, Node root) {
         if (!itemIterator.hasNext()) return root;
 
         if (root instanceof Branch branch) {
             if (index < branch.left.itemCount()) {
                 return cleaned(new Branch(
-                        withReplacement(index, itemIterator, branch.left),
-                        withReplacement(0, itemIterator, branch.right)));
+                        replace(index, itemIterator, branch.left),
+                        replace(0, itemIterator, branch.right)));
             } else {
                 return cleaned(new Branch(
                         branch.left,
-                        withReplacement(index - branch.left.itemCount(), itemIterator, branch.right)));
+                        replace(index - branch.left.itemCount(), itemIterator, branch.right)));
             }
         } else if (root instanceof Leaf leaf) {
             final var newItems = Arrays.copyOf(leaf.items, leaf.items.length);
@@ -461,38 +633,38 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         } else throw new IllegalStateException();
     }
 
-    private static Node withInsertion(int index, Node items, Node root) {
+    private static Node insert(int index, Node items, Node root) {
         if (root instanceof Branch branch) {
             if (index < branch.left.itemCount()) {
                 return cleaned(new Branch(
-                        withInsertion(index, items, branch.left),
+                        insert(index, items, branch.left),
                         branch.right));
             } else {
                 return cleaned(new Branch(
                         branch.left,
-                        withInsertion(index - branch.left.itemCount(), items, branch.right)));
+                        insert(index - branch.left.itemCount(), items, branch.right)));
             }
         } else if (root instanceof Leaf leaf) {
             final var withProceeding = index < leaf.items.length
-                    ? withInsertion(items.itemCount(), new ArrayIterator<>(leaf.items, index), items)
+                    ? insert(items.itemCount(), new ArrayIterator<>(leaf.items, index), items)
                     : items;
 
             return index > 0
-                    ? withInsertion(0, new ArrayIterator<>(leaf.items, 0, index), withProceeding)
+                    ? insert(0, new ArrayIterator<>(leaf.items, 0, index), withProceeding)
                     : withProceeding;
         } else throw new IllegalStateException();
     }
 
-    private static Node withInsertion(int index, Iterator<?> itemIterator, Node root) {
+    private static Node insert(int index, Iterator<?> itemIterator, Node root) {
         if (root instanceof Branch branch) {
             if (index < branch.left.itemCount()) {
                 return cleaned(new Branch(
-                        withInsertion(index, itemIterator, branch.left),
+                        insert(index, itemIterator, branch.left),
                         branch.right));
             } else {
                 return cleaned(new Branch(
                         branch.left,
-                        withInsertion(index - branch.left.itemCount(), itemIterator, branch.right)));
+                        insert(index - branch.left.itemCount(), itemIterator, branch.right)));
             }
         } else if (root instanceof Leaf leaf) {
             final var partitions = new ArrayList<Object[]>();
@@ -724,6 +896,9 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         } else throw new IllegalStateException();
     }
 
+    /**
+     * Tries to replace the first occurrence of the item. return null if the item doesn't occur.
+     */
     private static Node replaceFirstOccurrence(Node node, Object item) {
         if (node instanceof Branch branch) {
             final var leftResult = replaceFirstOccurrence(branch.left, item);
