@@ -29,7 +29,7 @@ public class UnmodifiableList<T> implements List<T> {
 
     @Override
     public boolean contains(Object o) {
-        return return base.contains(o);
+        return base.contains(o);
     }
 
     @NotNull

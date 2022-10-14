@@ -267,7 +267,7 @@ public class Scratch {
     }
 
     public static void main(String[] args) {
-        var l = new PersistentList<String>(List.of(
+        var l = PersistentList.of(
                 "apple",
                 "banana",
                 "stroke",
@@ -282,7 +282,7 @@ public class Scratch {
                 "clever",
                 "stoke",
                 "carmel"
-        ));
+        );
         final var originalL = l;
 
         print(l);
@@ -461,7 +461,7 @@ public class Scratch {
         print(Objects.equals(bigStructure, differentBigStructure));
 
 
-        final var plist123 = PersistentList.of(1, 2, 3).repeated(5_000_000 / 3);
+        final var plist123 = PersistentList.of(1, 2, 3).repeated(50_000_000 / 3);
         final var list123 = new ArrayList<Integer>(plist123.size());
         list123.addAll(plist123);
         final var arr123 = list123.toArray(new Integer[0]);

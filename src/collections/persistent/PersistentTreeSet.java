@@ -420,13 +420,13 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
         }
 
         private void drillDownLeft() {
-            while (Objects.requireNonNull(location.peek()).left != null) {
+            while (location.peek().left != null) {
                 location.push(location.peek().left);
             }
         }
 
         private void drillDownRight() {
-            while (Objects.requireNonNull(location.peek()).right != null) {
+            while (location.peek().right != null) {
                 location.push(location.peek().right);
             }
         }

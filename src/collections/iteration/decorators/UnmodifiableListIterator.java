@@ -17,7 +17,7 @@ public class UnmodifiableListIterator<T> implements ListIterator<T> {
     }
 
     @Override
-    public Object next() {
+    public T next() {
         return base.next();
     }
 
@@ -27,7 +27,7 @@ public class UnmodifiableListIterator<T> implements ListIterator<T> {
     }
 
     @Override
-    public Object previous() {
+    public T previous() {
         return base.previous();
     }
 

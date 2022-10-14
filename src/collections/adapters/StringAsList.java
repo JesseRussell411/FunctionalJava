@@ -1,6 +1,7 @@
 package collections.adapters;
 
 import java.util.AbstractList;
+import java.util.List;
 import java.util.Objects;
 
 public class StringAsList extends AbstractList<Character> {
