@@ -569,27 +569,25 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         } else throw new IllegalStateException();
     }
 
-    private static Node get(int start, int end, Node root) {
-        if (root instanceof Branch branch) {
+    private static Node get(int start, int end, Node node) {
+        if (node instanceof Branch branch) {
             final var left = branch.left;
             final var right = branch.right;
 
             if (start < left.itemCount()) {
                 if (end <= left.itemCount()) {
-                    return cleaned(new Branch(
-                            get(start, end, left),
-                            right));
+                    return cleaned(get(start, end, left));
                 } else {
                     return cleaned(new Branch(
                             get(start, left.itemCount(), left),
                             get(0, end - left.itemCount(), right)));
                 }
             } else {
-                return cleaned(new Branch(
-                        left,
-                        get(start - left.itemCount(), end - left.itemCount(), right)));
+                return cleaned(get(
+                        start - left.itemCount(),
+                        end - left.itemCount(), right));
             }
-        } else if (root instanceof Leaf leaf) {
+        } else if (node instanceof Leaf leaf) {
             return new Leaf(ArrayUtils.get(leaf.items, start, end - start));
         } else throw new IllegalStateException();
     }
@@ -819,10 +817,12 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
     }
 
     // ========= maintenance ============
-    private static Node cleaned(Branch branch) {
-        final var pruned = pruned(branch);
-        if (!(pruned instanceof Branch prunedBranch)) return pruned;
-        return balanced(prunedBranch);
+    private static Node cleaned(Node node) {
+        if (node instanceof Branch branch) {
+            final var pruned = pruned(branch);
+            if (!(pruned instanceof Branch prunedBranch)) return pruned;
+            return balanced(prunedBranch);
+        } else return node;
     }
 
     private static Node pruned(Branch branch) {
