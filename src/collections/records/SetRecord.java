@@ -2,8 +2,8 @@ package collections.records;
 
 import collections.persistent.PersistentSet;
 import collections.reference.WeakIdentityConcurrentHashMap;
-import memoization.pure.lazy.Lazy;
-import memoization.pure.lazy.SoftLazy;
+import memoization.pure.supplier.MemoizedSupplier;
+import memoization.pure.supplier.SoftMemoizedSupplier;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -48,7 +48,7 @@ public class SetRecord<T> implements Iterable<T>, Serializable {
         return set;
     }
 
-    private final Supplier<Integer> lazyHash = new Lazy<>(() -> {
+    private final Supplier<Integer> lazyHash = new MemoizedSupplier<>(() -> {
         // TODO implement quickHash in PersistentSet
         int hash = 1;
         for (final var value : values()) {
@@ -108,7 +108,7 @@ public class SetRecord<T> implements Iterable<T>, Serializable {
         return set.stream();
     }
 
-    private final Supplier<String> toString = new SoftLazy<>(() -> {
+    private final Supplier<String> toString = new SoftMemoizedSupplier<>(() -> {
         final var builder = new StringBuilder();
         final var iter = iterator();
 

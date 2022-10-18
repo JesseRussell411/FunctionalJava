@@ -1,6 +1,6 @@
 package collections.iteration;
 
-import reference.FinalPointer;
+import reference.pointers.FinalPointer;
 
 import java.util.Comparator;
 import java.util.Iterator;

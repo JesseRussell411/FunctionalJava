@@ -1,17 +1,17 @@
-package memoization.pure.lazy;
+package memoization.pure.supplier;
 
-import reference.FinalPointer;
+import reference.pointers.FinalPointer;
 
 import java.lang.ref.SoftReference;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class SoftLazy<T> implements Supplier<T> {
+public class SoftMemoizedSupplier<T> implements Supplier<T> {
     private Supplier<T> original;
     private volatile SoftReference<FinalPointer<T>> cache = new SoftReference<>(null);
     private volatile RuntimeException exceptionCache = null;
 
-    public SoftLazy(Supplier<T> original) {
+    public SoftMemoizedSupplier(Supplier<T> original) {
         this.original = Objects.requireNonNull(original);
     }
 

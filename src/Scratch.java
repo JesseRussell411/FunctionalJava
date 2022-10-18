@@ -402,11 +402,11 @@ public class Scratch {
         print(pts.stream().sorted().iterator(), "\n");
 
         final var somelist = PersistentList.of(1, 2, 3, 4, 5);
-        print(somelist.repeated(4));
-        print(somelist.repeated(-4));
-        System.out.println(somelist.repeated(2).asString());
+        print(somelist.repeat(4));
+        print(somelist.repeat(-4));
+        System.out.println(somelist.repeat(2).asString());
         start = System.currentTimeMillis();
-        final var repeatedALot = somelist.repeated(429_496_729);
+        final var repeatedALot = somelist.repeat(429_496_729);
         stop = System.currentTimeMillis();
         print("repeating 429_496_729 times took:" + (stop - start) + "ms");
         print("size after repeating: " + repeatedALot.size());
@@ -461,7 +461,7 @@ public class Scratch {
         print(Objects.equals(bigStructure, differentBigStructure));
 
 
-        final var plist123 = PersistentList.of(1, 2, 3).repeated(50_000_000 / 3);
+        final var plist123 = PersistentList.of(1, 2, 3).repeat(50_000_000 / 3);
         final var list123 = new ArrayList<Integer>(plist123.size());
         list123.addAll(plist123);
         final var arr123 = list123.toArray(new Integer[0]);

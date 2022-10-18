@@ -1,4 +1,4 @@
-package reference;
+package reference.pointers;
 
 public class VolatilePointer<T> {
     public volatile T current;

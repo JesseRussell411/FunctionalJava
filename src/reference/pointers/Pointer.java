@@ -1,4 +1,4 @@
-package reference;
+package reference.pointers;
 
 public class Pointer<T> {
     public T current;

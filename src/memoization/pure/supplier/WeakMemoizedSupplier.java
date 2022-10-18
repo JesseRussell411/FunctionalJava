@@ -1,17 +1,17 @@
-package memoization.pure.lazy;
+package memoization.pure.supplier;
 
-import reference.FinalPointer;
+import reference.pointers.FinalPointer;
 
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class WeakLazy<T> implements Supplier<T> {
+public class WeakMemoizedSupplier<T> implements Supplier<T> {
     private Supplier<T> original;
     private volatile WeakReference<FinalPointer<T>> cache = new WeakReference<>(null);
     private volatile RuntimeException exceptionCache = null;
 
-    public WeakLazy(Supplier<T> original) {
+    public WeakMemoizedSupplier(Supplier<T> original) {
         this.original = Objects.requireNonNull(original);
     }
 

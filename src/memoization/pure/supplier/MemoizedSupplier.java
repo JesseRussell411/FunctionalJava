@@ -1,4 +1,4 @@
-package memoization.pure.lazy;
+package memoization.pure.supplier;
 
 import reference.VolatileUntilSet;
 
@@ -9,11 +9,11 @@ import java.util.function.Supplier;
  * A memoized {@link Supplier}. Possibly useful for lazy execution, hence the name.
  * @param <T>
  */
-public class Lazy<T> implements Supplier<T> {
+public class MemoizedSupplier<T> implements Supplier<T> {
     private Supplier<T> original;
     private final VolatileUntilSet<Supplier<T>> cache = new VolatileUntilSet<>();
 
-    public Lazy(Supplier<T> original) {
+    public MemoizedSupplier(Supplier<T> original) {
         this.original = Objects.requireNonNull(original);
     }
 

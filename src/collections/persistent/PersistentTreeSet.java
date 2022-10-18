@@ -8,7 +8,7 @@ import collections.iteration.adapters.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.BiDirectionalEnumerable;
 import collections.iteration.enumerator.BiDirectionalEnumerator;
 import org.jetbrains.annotations.NotNull;
-import reference.Pointer;
+import reference.pointers.Pointer;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -404,7 +404,7 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
         NodeEnumerator(Node<T> root, boolean startAndEnd) {
             if (root != null) {
                 location = new ArrayStack<>(root.depth);
-                location.push(root);
+                location.add(root);
                 if (startAndEnd) {
                     drillDownRight();
                     afterEnd = true;
@@ -421,13 +421,13 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
 
         private void drillDownLeft() {
             while (location.peek().left != null) {
-                location.push(location.peek().left);
+                location.add(location.peek().left);
             }
         }
 
         private void drillDownRight() {
             while (location.peek().right != null) {
-                location.push(location.peek().right);
+                location.add(location.peek().right);
             }
         }
 
@@ -442,14 +442,14 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
                 return false;
             }
             if (location.peek().right != null) {
-                location.push(location.peek().right);
+                location.add(location.peek().right);
                 drillDownLeft();
             } else {
                 Node<T> child;
                 do {
                     child = location.pop();
                     if (location.isEmpty()) {
-                        location.push(child);
+                        location.add(child);
                         drillDownRight();
                         afterEnd = true;
                         return false;
@@ -470,14 +470,14 @@ public class PersistentTreeSet<T extends Comparable<T>> extends AbstractSet<T> i
                 return false;
             }
             if (location.peek().left != null) {
-                location.push(location.peek().left);
+                location.add(location.peek().left);
                 drillDownRight();
             } else {
                 Node<T> child;
                 do {
                     child = location.pop();
                     if (location.isEmpty()) {
-                        location.push(child);
+                        location.add(child);
                         drillDownLeft();
                         beforeStart = true;
                         return false;

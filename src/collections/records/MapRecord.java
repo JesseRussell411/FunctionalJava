@@ -2,8 +2,8 @@ package collections.records;
 
 import collections.persistent.PersistentMap;
 import collections.reference.WeakIdentityConcurrentHashMap;
-import memoization.pure.lazy.Lazy;
-import memoization.pure.lazy.SoftLazy;
+import memoization.pure.supplier.MemoizedSupplier;
+import memoization.pure.supplier.SoftMemoizedSupplier;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -31,7 +31,7 @@ public class MapRecord<K, V> implements Iterable<Map.Entry<K, V>>, Serializable 
         this.map = map;
     }
 
-    private final Supplier<Integer> getHash = new Lazy<>(() -> {
+    private final Supplier<Integer> getHash = new MemoizedSupplier<>(() -> {
         int hash = 0;
         for (final var entry : entries().entrySet()) {
             hash ^= Objects.hash(entry.getKey(), entry.getValue());
@@ -100,7 +100,7 @@ public class MapRecord<K, V> implements Iterable<Map.Entry<K, V>>, Serializable 
         return map.stream();
     }
 
-    private final Supplier<String> toString = new SoftLazy<>(() -> {
+    private final Supplier<String> toString = new SoftMemoizedSupplier<>(() -> {
         final var builder = new StringBuilder();
         final var iter = iterator();
         builder.append("{ ");

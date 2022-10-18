@@ -1,8 +1,142 @@
 package collections;
 
-import java.util.*;
+import reference.pointers.Pointer;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 
 public class ArrayUtils {
+    //TODO write unit tests for ALL of this
+
+    public static Object[] filter(Object[] original, BiPredicate<Object, Integer> test) {
+        return filter(original, test, -1, false, false);
+    }
+
+    public static Object[] filter(Object[] original, BiPredicate<Object, Integer> test, int removalLimit) {
+        return filter(original, test, removalLimit, false, false);
+    }
+
+    public static Object[] filter(Object[] original, BiPredicate<Object, Integer> test, boolean sourceReversed, boolean reverseResult) {
+        return filter(original, test, -1, sourceReversed, reverseResult);
+    }
+
+    public static Object[] filter(Object[] original, BiPredicate<Object, Integer> test, int removalLimit, boolean sourceReversed, boolean reverseResult) {
+        Objects.requireNonNull(original);
+        Objects.requireNonNull(test);
+
+        if (removalLimit == 0) return original;
+
+        final var jd = sourceReversed ^ reverseResult ? -1 : 1;
+
+        final var result = new ArrayList<>();
+        int j = 0;
+        if (removalLimit < 0) {
+            // no removal limit
+            for (int i = 0; i < original.length; i++) {
+                final var item = original[j];
+                if (test.test(item, i)) result.add(item);
+                j += jd;
+            }
+        } else {
+            int index = reverseResult ? original.length - 1 : 0;
+            final var indexD = reverseResult ? -1 : 1;
+
+            int i = 0;
+            for (; i < original.length; i++) {
+                // check if remove limit has been reached
+                if (removalLimit == 0) break;
+
+                final var item = original[j];
+
+                if (test.test(item, index)) {
+                    result.add(item);
+                } else {
+                    // test failed, record removal
+                    removalLimit--;
+                }
+
+                j += jd;
+                index += indexD;
+            }
+
+            // if iteration is not complete, the removal limit was reached
+            // finish iteration, copying everything without running the test
+            for (; i < original.length; i++) {
+                final var item = original[j];
+                result.add(item);
+                j += jd;
+            }
+        }
+
+        return result.toArray();
+    }
+
+    public static Object[] map(Object[] original, BiFunction<Object, Integer, Object> mapping) {
+        return map(original, mapping, -1, new Pointer<>(), false, false);
+    }
+
+    public static Object[] map(Object[] original, BiFunction<Object, Integer, Object> mapping, int modificationLimit) {
+        return map(original, mapping, modificationLimit, new Pointer<>(), false, false);
+    }
+
+    public static Object[] map(Object[] original, BiFunction<Object, Integer, Object> mapping, int modificationLimit, Pointer<Integer> out_modificationCount) {
+        return map(original, mapping, modificationLimit, out_modificationCount);
+    }
+
+    public static Object[] map(Object[] original, BiFunction<Object, Integer, Object> mapping, int modificationLimit, Pointer<Integer> out_modificationCount, boolean sourceReversed, boolean reverseResult) {
+        Objects.requireNonNull(original);
+        Objects.requireNonNull(mapping);
+
+        final var result = new Object[original.length];
+
+        int o = sourceReversed ? original.length - 1 : 0;
+        int r = reverseResult ? result.length - 1 : 0;
+        final var od = sourceReversed ? -1 : 1;
+        final var rd = reverseResult ? -1 : 1;
+
+        if (modificationLimit < 0) {
+            for (int i = 0; i < original.length; i++) {
+                result[r] = mapping.apply(original[o], i);
+                o += od;
+                r += rd;
+            }
+
+            out_modificationCount.current = result.length;
+        } else {
+            int modificationCount = 0;
+
+            int i = 0;
+            for (; i < original.length; i++) {
+                if (modificationLimit == 0) break;
+                final var item = original[o];
+                final var mapped = mapping.apply(item, i);
+                if (item != mapped) {
+                    modificationLimit--;
+                    modificationCount++;
+                }
+                result[r] = mapped;
+                o += od;
+                r += rd;
+            }
+
+            for (; i < original.length; i++) {
+                result[r] = original[o];
+                o += od;
+                r += rd;
+            }
+            out_modificationCount.current = modificationCount;
+
+            if (modificationCount == 0) {
+                // no modifications occurred
+                return original;
+            }
+        }
+        return result;
+    }
 
     public static Object[] remove(Object[] original, int start, int length) {
         return remove(original, start, length, false, false);

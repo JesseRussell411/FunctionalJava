@@ -2,8 +2,8 @@ package collections.records;
 
 import collections.persistent.PersistentList;
 import collections.reference.WeakIdentityConcurrentHashMap;
-import memoization.pure.lazy.Lazy;
-import memoization.pure.lazy.SoftLazy;
+import memoization.pure.supplier.MemoizedSupplier;
+import memoization.pure.supplier.SoftMemoizedSupplier;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
     }
 
     // important stuff
-    private final Lazy<Integer> lazyHash = new Lazy<>(() -> {
+    private final MemoizedSupplier<Integer> lazyHash = new MemoizedSupplier<>(() -> {
         int hash = 1;
         for (final var item : items()) {
             hash = Objects.hash(hash, item);
@@ -123,7 +123,7 @@ public class ListRecord<T> implements Iterable<T>, java.io.Serializable {
         return list.stream();
     }
 
-    private final Supplier<String> toString = new SoftLazy<>(() -> {
+    private final Supplier<String> toString = new SoftMemoizedSupplier<>(() -> {
         final var builder = new StringBuilder();
         final var iter = iterator();
 

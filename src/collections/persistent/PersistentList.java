@@ -1,6 +1,7 @@
 package collections.persistent;
 
 import collections.ArrayStack;
+import collections.ArrayUtils;
 import collections.adapters.ArrayAsList;
 import collections.iteration.IterableUtils;
 import collections.iteration.adapters.ArrayIterator;
@@ -11,11 +12,16 @@ import collections.iteration.enumerable.IndexedBiDirectionalEnumerable;
 import collections.iteration.enumerator.Enumerator;
 import collections.iteration.enumerator.IndexedBiDirectionalEnumerator;
 import collections.records.ListRecord;
-import memoization.pure.lazy.SoftLazy;
+import errors.ImpossibleStateException;
+import memoization.pure.function.SoftMemoizedFunction;
+import memoization.pure.supplier.SoftMemoizedSupplier;
 import org.jetbrains.annotations.NotNull;
-import collections.ArrayUtils;
+import reference.pointers.Pointer;
 
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -187,6 +193,8 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return The item at the index.
      */
     public T get(int index) {
+        if (index < 0) index = convertNegativeIndex(index);
+
         return (T) get(index, root);
     }
 
@@ -200,6 +208,8 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A new list with the item replaced.
      */
     public PersistentList<T> swap(int index, T item) {
+        if (index < 0) index = convertNegativeIndex(index);
+
         ArrayUtils.requireIndexInBounds(index, size());
         return new PersistentList<>(set(index, item, root));
     }
@@ -214,6 +224,8 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A new list with the item inserted.
      */
     public PersistentList<T> insertSingle(int index, T item) {
+        if (index < 0) index = convertNegativeIndex(index);
+
         ArrayUtils.requireIndexInBounds(index, size() + 1);
         return new PersistentList<>(add(index, item, root));
     }
@@ -227,6 +239,8 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A new list without the item at the index.
      */
     public PersistentList<T> without(int index) {
+        if (index < 0) index = convertNegativeIndex(index);
+
         ArrayUtils.requireIndexInBounds(index, size());
         return new PersistentList<>(remove(index, index + 1, root));
     }
@@ -242,6 +256,8 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A new list containing the range of items.
      */
     public PersistentList<T> get(int start, int length) {
+        if (start < 0) start = convertNegativeIndex(start);
+
         ArrayUtils.requireRangeInBounds(start, length, size());
         return new PersistentList<>(get(start, start + length, root));
     }
@@ -278,7 +294,6 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A new list with the replaced items.
      */
     public PersistentList<T> replace(int index, Collection<T> items) {
-        ArrayUtils.requireIndexInBounds(index, size());
         if (items.size() == 0) return this;
         return replace(index, items.iterator());
     }
@@ -291,7 +306,6 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A new list with the replaced items.
      */
     public PersistentList<T> replace(int index, T[] items) {
-        ArrayUtils.requireIndexInBounds(index, size());
         if (items.length == 0) return this;
         return replace(index, new ArrayIterator<>(items));
     }
@@ -304,6 +318,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A new list with the replaced items.
      */
     public PersistentList<T> replace(int index, Iterator<T> items) {
+        if (index < 0) index = convertNegativeIndex(index);
         ArrayUtils.requireIndexInBounds(index, size());
         return new PersistentList<>(replace(index, items, root));
     }
@@ -339,20 +354,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @param items The items to insert.
      * @return A new list with the inserted items.
      */
-    public PersistentList<T> insert(int index, Iterator<T> items) {
-        ArrayUtils.requireIndexInBounds(index, size() + 1);
-        return new PersistentList<>(insert(index, items, root));
-    }
-
-    /**
-     * Inserts a collection of items into the list.
-     *
-     * @param index Where to insert the items.
-     * @param items The items to insert.
-     * @return A new list with the inserted items.
-     */
     public PersistentList<T> insert(int index, Collection<T> items) {
-        ArrayUtils.requireIndexInBounds(index, size() + 1);
         if (items.size() == 0) return this;
         return insert(index, items.iterator());
     }
@@ -365,7 +367,6 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A new list with the inserted items.
      */
     public PersistentList<T> insert(int index, T[] items) {
-        ArrayUtils.requireIndexInBounds(index, size() + 1);
         if (items.length == 0) return this;
         return insert(index, new ArrayIterator<>(items));
     }
@@ -377,7 +378,21 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @param items The items to insert.
      * @return A new list with the inserted items.
      */
+    public PersistentList<T> insert(int index, Iterator<T> items) {
+        if (index < 0) index = convertNegativeIndex(index);
+        ArrayUtils.requireIndexInBounds(index, size() + 1);
+        return new PersistentList<>(insert(index, items, root));
+    }
+
+    /**
+     * Inserts a collection of items into the list.
+     *
+     * @param index Where to insert the items.
+     * @param items The items to insert.
+     * @return A new list with the inserted items.
+     */
     public PersistentList<T> insert(int index, PersistentList<T> items) {
+        if (index < 0) index = convertNegativeIndex(index);
         ArrayUtils.requireIndexInBounds(index, size() + 1);
         if (items.size() == 0) return this;
         return new PersistentList<>(insert(index, items.root, root));
@@ -393,6 +408,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      * @return A new list with the range removed.
      */
     public PersistentList<T> without(int start, int length) {
+        if (start < 0) start = convertNegativeIndex(start);
         ArrayUtils.requireRangeInBounds(start, length, size());
         return new PersistentList<>(remove(start, start + length, root));
     }
@@ -478,15 +494,51 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         return without(0);
     }
 
-    public PersistentList<T> withoutFirstOccurrence(T item) {
-        final var tryResult = withoutFirstOccurrence(root, item);
-        if (tryResult == null) {
-            return this;
-        } else {
-            return new PersistentList<>(tryResult);
-        }
+    public PersistentList<T> filter(BiPredicate<T, Integer> test) {
+        return filter(test, -1);
     }
 
+    public PersistentList<T> filter(BiPredicate<T, Integer> test, int removalLimit) {
+        Objects.requireNonNull(test);
+        final var result = filter(root, (BiPredicate<Object, Integer>) test, new Pointer<>(removalLimit));
+
+        if (result == root)
+            return this;
+        else
+            return new PersistentList<>(result);
+    }
+
+    public <R> PersistentList<R> map(BiFunction<T, Integer, R> mapping) {
+        Objects.requireNonNull(mapping);
+        final var result = map(root, (BiFunction<Object, Integer, Object>) mapping, new Pointer<>(-1));
+        return new PersistentList<>(result);
+    }
+
+    public PersistentList<Object> map(BiFunction<T, Integer, Object> mapping, int modificationLimit) {
+        Objects.requireNonNull(mapping);
+        final var result = map(root, (BiFunction<Object, Integer, Object>) mapping, new Pointer<>(modificationLimit));
+        if (result == root)
+            return (PersistentList<Object>) this;
+        else
+            return new PersistentList<>(result);
+    }
+
+    /**
+     * Removes the first occurrence of the item from the list while leaving in subsequent occurrences.
+     *
+     * @param item The item to remove.
+     * @return A new list with the first occurrence of the item removed.
+     */
+    public PersistentList<T> withoutFirstOccurrence(T item) {
+        return filter((listItem, i) -> !Objects.equals(item, listItem), 1);
+    }
+
+    /**
+     * Gets the first occurrence in the list of an item matching the given item.
+     *
+     * @param item The item to look for.
+     * @return The first item in the list that is considered equal to the given item or null if one wasn't found.
+     */
     public T getFirstOccurrence(T item) {
         if (item == null) return null;
         for (final var thisItem : this) {
@@ -495,9 +547,16 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         return null;
     }
 
-    public PersistentList<T> withFirstOccurrenceReplaced(T item) {
+    /**
+     * Replaces the first occurrence of the item with the replacement.
+     *
+     * @param item        The item to look for.
+     * @param replacement What to replace the item with.
+     * @return A new list with the first occurrence of the item replaced with the replacement.
+     */
+    public PersistentList<T> replaceFirstOccurrence(T item, T replacement) {
         if (item == null) return this;
-        final var result = replaceFirstOccurrence(root, item);
+        final var result = replaceFirstOccurrence(root, item, replacement);
         if (result == null) return this;
         return new PersistentList<>(result);
     }
@@ -514,26 +573,99 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             else return this.put(null);
         }
 
-        final var replacementAttempt = replaceFirstOccurrence(root, item);
-        if (replacementAttempt != null) return new PersistentList<>(replacementAttempt);
-        return put(item);
+        final var replacementAttempt = replaceFirstOccurrence(root, item, item);
+        if (replacementAttempt != null)
+            return new PersistentList<>(replacementAttempt);
+        else
+            return put(item);
     }
 
-    private final Supplier<PersistentList<T>> lazyReversed = new SoftLazy<>(() -> new PersistentList<>(reversedIterator()));
-
-    public PersistentList<T> reversed() {
-        return lazyReversed.get();
+    /**
+     * Reverses the list.
+     *
+     * @return A new list with the items in this list in reverse order.
+     */
+    public PersistentList<T> reverse() {
+        return memoReverse.get();
     }
 
-    public PersistentList<T> concat(PersistentList<T> other) {
-        return this.insert(size(), other);
+    private final Supplier<PersistentList<T>> memoReverse = new SoftMemoizedSupplier<>(() -> new PersistentList<>(reversedIterator()));
+
+    /**
+     * Adds the items to the end of the list.
+     *
+     * @param items The items to add.
+     * @return A new list with the items added to the end.
+     */
+    public PersistentList<T> concat(Stream<T> items) {
+        return this.insert(size(), items);
     }
 
-    public PersistentList<T> repeated(int times) {
-        // Cannot be less than 2, or it'll cause infinite recursion and a stack overflow.
+    /**
+     * Adds the items to the end of the list.
+     *
+     * @param items The items to add.
+     * @return A new list with the items added to the end.
+     */
+    public PersistentList<T> concat(Iterable<T> items) {
+        return this.insert(size(), items);
+    }
+
+    /**
+     * Adds the items to the end of the list.
+     *
+     * @param items The items to add.
+     * @return A new list with the items added to the end.
+     */
+    public PersistentList<T> concat(Collection<T> items) {
+        return this.insert(size(), items);
+    }
+
+    /**
+     * Adds the items to the end of the list.
+     *
+     * @param items The items to add.
+     * @return A new list with the items added to the end.
+     */
+    public PersistentList<T> concat(T[] items) {
+        return this.insert(size(), items);
+    }
+
+    /**
+     * Adds the items to the end of the list.
+     *
+     * @param items The items to add.
+     * @return A new list with the items added to the end.
+     */
+    public PersistentList<T> concat(Iterator<T> items) {
+        return this.insert(size(), items);
+    }
+
+    /**
+     * Adds the items to the end of the list.
+     *
+     * @param items The items to add.
+     * @return A new list with the items added to the end.
+     */
+    public PersistentList<T> concat(PersistentList<T> items) {
+        return this.insert(size(), items);
+    }
+
+    /**
+     * Repeats the list a number of times.
+     *
+     * @param times How many times to repeat the list. If negative, the list is reversed and then repeated. -1 would just reverse the list for example.
+     * @return A new list with the items of this list repeated.
+     */
+    public PersistentList<T> repeat(int times) {
+        return memoRepeat.apply(times);
+    }
+
+    private final Function<Integer, PersistentList<T>> memoRepeat = new SoftMemoizedFunction<>((Integer times) -> {
+        // Cannot be less than 2 or it'll cause infinite recursion and a stack overflow.
         final int breakingDenominator = Math.max(2, size() < PARTITION_SIZE ? PARTITION_SIZE / size() : PARTITION_SIZE);
 
-        if (times < 0) return reversed().repeated(-times);
+        if (times < 0) return reverse().repeat(-times);
         if (times == 1) return this;
         if (times == 0) return new PersistentList<>();
 
@@ -549,12 +681,11 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         // recursive case
         final var quotient = times / breakingDenominator;
         final var remainder = times % breakingDenominator;
-        final var repeatedByQuotient = this.repeated(quotient);
-        final var repeatedByRemainder = this.repeated(remainder);
+        final var repeatedByQuotient = this.repeat(quotient);
+        final var repeatedByRemainder = this.repeat(remainder);
 
-        return repeatedByQuotient.repeated(breakingDenominator).concat(repeatedByRemainder);
-    }
-
+        return repeatedByQuotient.repeat(breakingDenominator).concat(repeatedByRemainder);
+    });
 
     // ============================== private utilities =================================
     private static Object get(int index, Node root) {
@@ -566,7 +697,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             }
         } else if (root instanceof Leaf leaf) {
             return leaf.items[index];
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     private static Node get(int start, int end, Node node) {
@@ -589,7 +720,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             }
         } else if (node instanceof Leaf leaf) {
             return new Leaf(ArrayUtils.get(leaf.items, start, end - start));
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     private static Node set(int index, Object item, Node root) {
@@ -605,7 +736,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             }
         } else if (root instanceof Leaf leaf) {
             return new Leaf(ArrayUtils.set(leaf.items, index, item));
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     private static Node replace(int index, Iterator<?> itemIterator, Node root) {
@@ -628,7 +759,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
                 newItems[i++] = itemIterator.next();
             }
             return new Leaf(newItems);
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     private static Node insert(int index, Node items, Node root) {
@@ -650,7 +781,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             return index > 0
                     ? insert(0, new ArrayIterator<>(leaf.items, 0, index), withProceeding)
                     : withProceeding;
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     private static Node insert(int index, Iterator<?> itemIterator, Node root) {
@@ -707,7 +838,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             }
 
             return fromPartitions(partitions);
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     private static Node add(int index, Object item, Node root) {
@@ -726,7 +857,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             return fromPartitions(new ArrayAsList<>(ArrayUtils.partition(
                     newItems,
                     PARTITION_SIZE)));
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     private static Node remove(int start, int end, Node root) {
@@ -755,7 +886,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         } else if (root instanceof Leaf leaf) {
             final var length = end - start;
             return new Leaf(ArrayUtils.remove(leaf.items, start, length));
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     private static Node fromPartitions(List<Object[]> partitions) {
@@ -813,7 +944,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             final var sorted = Arrays.copyOf(leaf.items, leaf.items.length);
             Arrays.sort(sorted, comparator);
             return new ArrayIterator<>(sorted);
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     // ========= maintenance ============
@@ -877,45 +1008,94 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         }
     }
 
-    private static Node withoutFirstOccurrence(Node node, Object item) {
+
+    private static Node filter(Node node, BiPredicate<Object, Integer> test, Pointer<Integer> removalLimit) {
+        return filter(node, test, removalLimit, 0);
+    }
+
+    private static Node filter(Node node, BiPredicate<Object, Integer> test, Pointer<Integer> removalLimit, int indexOffset) {
+        if (removalLimit.current == 0) return node;
+
         if (node instanceof Branch branch) {
-            final var leftResult = withoutFirstOccurrence(branch.left, item);
-            if (leftResult != null) return cleaned(new Branch(leftResult, branch.right));
+            final var leftResult = filter(branch.left, test, removalLimit, indexOffset);
+            final var rightResult = filter(branch.right, test, removalLimit, indexOffset + branch.left.itemCount());
 
-            final var rightResult = withoutFirstOccurrence(branch.right, item);
-            if (rightResult != null) return cleaned(new Branch(branch.left, rightResult));
-
-            return null;
+            if (leftResult == branch.left && rightResult == branch.right)
+                return branch;
+            else
+                return cleaned(new Branch(leftResult, rightResult));
         } else if (node instanceof Leaf leaf) {
-            for (int i = 0; i < leaf.items.length; i++) {
-                if (Objects.equals(item, leaf.items[i])) {
-                    return new Leaf(ArrayUtils.remove(leaf.items, i));
-                }
+            final var result = ArrayUtils.filter(
+                    leaf.items,
+                    (item, i) -> test.test(item, i + indexOffset),
+                    removalLimit.current);
+
+            if (result == leaf.items || result.length == leaf.items.length)
+                return leaf;
+
+            if (removalLimit.current >= 0)
+                removalLimit.current -= (leaf.items.length - result.length);
+
+            return new Leaf(result);
+        } else throw new ImpossibleStateException();
+    }
+
+    private static Node map(Node node, BiFunction<Object, Integer, Object> mapping, Pointer<Integer> modificationLimit) {
+        return map(node, mapping, modificationLimit, 0);
+    }
+
+    private static Node map(Node node, BiFunction<Object, Integer, Object> mapping, Pointer<Integer> modificationLimit, int indexOffset) {
+        if (modificationLimit.current == 0) return node;
+
+        if (node instanceof Branch branch) {
+            final var leftResult = map(branch.left, mapping, modificationLimit, indexOffset);
+            final var rightResult = map(branch.right, mapping, modificationLimit, indexOffset + branch.left.itemCount());
+            if (leftResult == branch.left && rightResult == branch.right)
+                return branch;
+            else
+                return cleaned(new Branch(leftResult, rightResult));
+
+        } else if (node instanceof Leaf leaf) {
+            final var modificationCount = new Pointer<>(0);
+            final var result = ArrayUtils.map(
+                    leaf.items,
+                    (item, i) -> mapping.apply(item, i + indexOffset),
+                    modificationLimit.current,
+                    modificationCount);
+
+            if (result == leaf.items || modificationCount.current == 0) {
+                return leaf;
+            } else {
+                modificationLimit.current -= modificationCount.current;
+                return new Leaf(result);
             }
-            return null;
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
     }
 
     /**
      * Tries to replace the first occurrence of the item. return null if the item doesn't occur.
      */
-    private static Node replaceFirstOccurrence(Node node, Object item) {
+    private static Node replaceFirstOccurrence(Node node, Object item, Object replacement) {
         if (node instanceof Branch branch) {
-            final var leftResult = replaceFirstOccurrence(branch.left, item);
+            final var leftResult = replaceFirstOccurrence(branch.left, item, replacement);
             if (leftResult != null) return cleaned(new Branch(leftResult, branch.right));
 
-            final var rightResult = replaceFirstOccurrence(branch.right, item);
+            final var rightResult = replaceFirstOccurrence(branch.right, item, replacement);
             if (rightResult != null) return cleaned(new Branch(branch.left, rightResult));
 
             return null;
         } else if (node instanceof Leaf leaf) {
             for (int i = 0; i < leaf.items.length; i++) {
                 if (Objects.equals(item, leaf.items[i])) {
-                    return new Leaf(ArrayUtils.set(leaf.items, i, item));
+                    return new Leaf(ArrayUtils.set(leaf.items, i, replacement));
                 }
             }
             return null;
-        } else throw new IllegalStateException();
+        } else throw new ImpossibleStateException();
+    }
+
+    private int convertNegativeIndex(int index) {
+        return size() - 1 + index;
     }
 
     // ========================= inner classes ====================================
@@ -1043,19 +1223,19 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             int indexInCurrentNode = initialIndex;
 
             Node currentNode = root;
-            location.push(currentNode);
+            location.add(currentNode);
 
 
             while (currentNode instanceof Branch currentBranch) {
                 if (indexInCurrentNode < currentBranch.left.itemCount()) {
                     currentNode = currentBranch.left;
-                    location.push(currentNode);
+                    location.add(currentNode);
                 } else {
                     locationIndex += currentBranch.left.leafCount();
                     indexInCurrentNode -= currentBranch.left.itemCount();
 
                     currentNode = currentBranch.right;
-                    location.push(currentNode);
+                    location.add(currentNode);
                 }
             }
 
@@ -1147,7 +1327,6 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
     }
 
     private static class LeafEnumerator implements IndexedBiDirectionalEnumerator<Leaf> {
-        //        private final Stack<Node> location;
         private final ArrayStack<Node> location;
         private int locationIndex;
         private final Node root;
@@ -1177,10 +1356,10 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             while (current instanceof Branch branch) {
                 if (right) {
                     current = branch.right;
-                    location.push(current);
+                    location.add(current);
                 } else {
                     current = branch.left;
-                    location.push(current);
+                    location.add(current);
                 }
             }
         }
@@ -1192,7 +1371,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
                 return;
             }
             if (locationIndex > (root.leafCount() - 1)) {
-                location.push(root);
+                location.add(root);
                 drillDownRight();
                 locationIndex = root.leafCount() - 1;
                 return;
@@ -1204,7 +1383,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
                 child = location.pop();
                 parent = (Branch) location.peek();
             } while (child == parent.left);
-            location.push(parent.left);
+            location.add(parent.left);
 
             drillDownRight();
             locationIndex--;
@@ -1217,7 +1396,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
                 return;
             }
             if (locationIndex < 0) {
-                location.push(root);
+                location.add(root);
                 drillDownLeft();
                 locationIndex = 0;
                 return;
@@ -1229,7 +1408,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
                 child = location.pop();
                 parent = (Branch) location.peek();
             } while (child == parent.right);
-            location.push(parent.right);
+            location.add(parent.right);
 
             drillDownLeft();
             locationIndex++;
