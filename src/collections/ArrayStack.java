@@ -44,6 +44,16 @@ public class ArrayStack<T> extends ArrayList<T> implements Cloneable {
         return remove(size() - 1);
     }
 
+    /**
+     * Pushes the item onto the stack.
+     * Identical to add.
+     *
+     * @param item The item to push onto the stack.
+     */
+    public void push(T item) {
+        add(item);
+    }
+
     @Override
     public ArrayStack<T> clone() {
         return (ArrayStack<T>) super.clone();

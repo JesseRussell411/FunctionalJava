@@ -1223,19 +1223,19 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             int indexInCurrentNode = initialIndex;
 
             Node currentNode = root;
-            location.add(currentNode);
+            location.push(currentNode);
 
 
             while (currentNode instanceof Branch currentBranch) {
                 if (indexInCurrentNode < currentBranch.left.itemCount()) {
                     currentNode = currentBranch.left;
-                    location.add(currentNode);
+                    location.push(currentNode);
                 } else {
                     locationIndex += currentBranch.left.leafCount();
                     indexInCurrentNode -= currentBranch.left.itemCount();
 
                     currentNode = currentBranch.right;
-                    location.add(currentNode);
+                    location.push(currentNode);
                 }
             }
 
@@ -1356,10 +1356,10 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             while (current instanceof Branch branch) {
                 if (right) {
                     current = branch.right;
-                    location.add(current);
+                    location.push(current);
                 } else {
                     current = branch.left;
-                    location.add(current);
+                    location.push(current);
                 }
             }
         }
@@ -1371,7 +1371,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
                 return;
             }
             if (locationIndex > (root.leafCount() - 1)) {
-                location.add(root);
+                location.push(root);
                 drillDownRight();
                 locationIndex = root.leafCount() - 1;
                 return;
@@ -1383,7 +1383,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
                 child = location.pop();
                 parent = (Branch) location.peek();
             } while (child == parent.left);
-            location.add(parent.left);
+            location.push(parent.left);
 
             drillDownRight();
             locationIndex--;
@@ -1396,7 +1396,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
                 return;
             }
             if (locationIndex < 0) {
-                location.add(root);
+                location.push(root);
                 drillDownLeft();
                 locationIndex = 0;
                 return;
@@ -1408,7 +1408,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
                 child = location.pop();
                 parent = (Branch) location.peek();
             } while (child == parent.right);
-            location.add(parent.right);
+            location.push(parent.right);
 
             drillDownLeft();
             locationIndex++;
