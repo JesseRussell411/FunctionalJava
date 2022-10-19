@@ -4,7 +4,9 @@ import collections.ArrayStack;
 import collections.ArrayUtils;
 import collections.adapters.ArrayAsList;
 import collections.iteration.IterableUtils;
+import collections.iteration.MergingIterator;
 import collections.iteration.adapters.ArrayIterator;
+import collections.iteration.adapters.EnumeratorIterator;
 import collections.iteration.adapters.ListEnumeratorIterator;
 import collections.iteration.adapters.ReversedEnumeratorIterator;
 import collections.iteration.enumerable.Enumerable;
@@ -18,6 +20,7 @@ import memoization.pure.supplier.SoftMemoizedSupplier;
 import org.jetbrains.annotations.NotNull;
 import reference.pointers.Pointer;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -82,6 +85,10 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
     @SafeVarargs
     public static <T> PersistentList<T> of(T... items) {
         return new PersistentList<>(items);
+    }
+
+    public static <T> PersistentList<T> generate(Function<Integer, T> itemGenerator, int length) {
+        return new PersistentList<>(fromGenerator(itemGenerator, length));
     }
 
     // interface compliance
@@ -933,6 +940,28 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         return fromPartitions(partitions);
     }
 
+    private static Node fromGenerator(Function<Integer, ?> itemGenerator, int length) {
+        if (length == 0) return EMPTY_LEAF;
+        final var partitions = new ArrayList<Object[]>();
+        Object[] newPartition = new Object[PARTITION_SIZE];
+        int p = 0;
+
+        for (int i = 0; i < length; i++) {
+            newPartition[p++] = itemGenerator.apply(i);
+            if (p >= PARTITION_SIZE){
+                partitions.add(newPartition);
+                newPartition = new Object[PARTITION_SIZE];
+                p = 0;
+            }
+        }
+
+        if (p > 0){
+            partitions.add(ArrayUtils.resize(newPartition, p));
+        }
+
+        return fromPartitions(partitions);
+    }
+
     // sorting
     private static Iterator<Object> sortedIterator(Node root, Comparator<Object> comparator) {
         if (root instanceof Branch branch) {
@@ -1324,6 +1353,53 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
         public int currentIndex() {
             return index;
         }
+    }
+
+    private Iterator<Object> iterateNode(Node n) {
+        return new EnumeratorIterator<>(new ItemEnumerator(n));
+    }
+
+    /**
+     * A sorting method that attempts to preserve structural sharing.
+     * This is much slower than {@link PersistentList#sorted(Comparator)}.
+     * But that sorting method does not attempt to preserver structural sharing.
+     * Use of this method over {@link PersistentList#sorted(Comparator)} may improve memory usage
+     * When the lists it is used on are mostly sorted already.
+     *
+     * @param c The comparator to sort with.
+     * @return A new list with the items in the original list in sorted order.
+     */
+    public PersistentList<T> optosort(@NotNull Comparator<T> c) {
+        Objects.requireNonNull(c);
+        return new PersistentList<>(optosort(c, root));
+    }
+
+    private Node optosort(Comparator<T> c, Node n) {
+        if (n instanceof Branch b) {
+            if (IterableUtils.isSorted((Iterator<T>) b.iterator(), c))
+                return b;
+
+            final var leftSorted = optosort(c, b.left);
+            final var rightSorted = optosort(c, b.right);
+            if (c.compare(
+                    // last item in left
+                    (T) get(leftSorted.itemCount() - 1, leftSorted),
+                    // first item in right
+                    (T) get(0, rightSorted)) <= 0) {
+                return new Branch(leftSorted, rightSorted);
+            } else {
+                return fromIterator(new MergingIterator<>(
+                        (Iterator<T>) leftSorted.iterator(),
+                        (Iterator<T>) rightSorted.iterator(),
+                        c));
+            }
+        } else if (n instanceof Leaf l) {
+            if (ArrayUtils.isSorted((T[]) l.items, c))
+                return l;
+
+            final var sortedItems = ((Stream<T>) StreamSupport.stream(Spliterators.spliterator(l.items, 0), true)).sorted(c).toArray();
+            return new Leaf(sortedItems);
+        } else throw new ImpossibleStateException();
     }
 
     private static class LeafEnumerator implements IndexedBiDirectionalEnumerator<Leaf> {

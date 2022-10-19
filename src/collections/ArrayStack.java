@@ -21,6 +21,7 @@ public class ArrayStack<T> extends ArrayList<T> implements Cloneable {
     /**
      * @param depth How far into the stack to retrieve the item. 0 would return the top item for example.
      * @return The item at the depth from the top of the stack without removing the item.
+     * @throws EmptyStackException
      */
     public T peek(int depth) {
         if (isEmpty()) throw new EmptyStackException();
@@ -29,6 +30,7 @@ public class ArrayStack<T> extends ArrayList<T> implements Cloneable {
 
     /**
      * @return The item at the top of the stack without removing it.
+     * @throws EmptyStackException
      */
     public T peek() {
         return peek(0);
@@ -38,10 +40,14 @@ public class ArrayStack<T> extends ArrayList<T> implements Cloneable {
      * Removes the item at the top of the stack.
      *
      * @return The item that was removed.
+     * @throws  EmptyStackException
      */
     public T pop() {
-        if (isEmpty()) throw new EmptyStackException();
-        return remove(size() - 1);
+        try {
+            return remove(size() - 1);
+        } catch (IndexOutOfBoundsException e) {
+            throw new EmptyStackException();
+        }
     }
 
     /**
