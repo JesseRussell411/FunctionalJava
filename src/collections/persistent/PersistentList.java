@@ -20,7 +20,6 @@ import memoization.pure.supplier.SoftMemoizedSupplier;
 import org.jetbrains.annotations.NotNull;
 import reference.pointers.Pointer;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -149,12 +148,12 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
     }
 
     /**
-     * Creates a string containing the string representations of each item in the list concatenated together with no deliminators.
+     * Creates a string containing the string representations of each item in the list concatenated together, separated by commas.
      *
      * @return The created string.
      */
     public String asString() {
-        return asString("");
+        return asString(",");
     }
 
     /**
@@ -162,7 +161,11 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
      *
      * @return The created string.
      */
-    public String asString(String deliminator) {
+    public String asString(Object deliminator) {
+        // the deliminator's toString might be costly so lets only do it once.
+        if (!(deliminator instanceof String))
+            return asString(deliminator.toString());
+
         final var builder = new StringBuilder();
 
         final var enu = this.enumerator();
@@ -948,14 +951,14 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
 
         for (int i = 0; i < length; i++) {
             newPartition[p++] = itemGenerator.apply(i);
-            if (p >= PARTITION_SIZE){
+            if (p >= PARTITION_SIZE) {
                 partitions.add(newPartition);
                 newPartition = new Object[PARTITION_SIZE];
                 p = 0;
             }
         }
 
-        if (p > 0){
+        if (p > 0) {
             partitions.add(ArrayUtils.resize(newPartition, p));
         }
 
@@ -1082,7 +1085,7 @@ public class PersistentList<T> extends AbstractList<T> implements IndexedBiDirec
             if (leftResult == branch.left && rightResult == branch.right)
                 return branch;
             else
-                return cleaned(new Branch(leftResult, rightResult));
+                return new Branch(leftResult, rightResult);
 
         } else if (node instanceof Leaf leaf) {
             final var modificationCount = new Pointer<>(0);
